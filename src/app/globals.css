@@ -1,26 +1,58 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-color: #05060f;
+  --card-bg: rgba(255, 255, 255, 0.02);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --accent-primary: #8b5cf6; /* Electric Purple */
+  --accent-primary-dark: #6d28d9; /* Deep Purple */
+  --accent-glow: rgba(139, 92, 246, 0.35);
+  --text-main: #ffffff;
+  --text-dim: rgba(255, 255, 255, 0.6);
+  --gradient: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-dark));
+  --transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  
+  /* System Colors for Notifications */
+  --color-error: #ef4444;
+  --color-success: #10b981;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  --color-brand-bg: var(--bg-color);
+  --color-brand-card: var(--card-bg);
+  --color-brand-border: var(--glass-border);
+  --color-brand-accent: var(--accent-primary);
+  --color-brand-accent-dark: var(--accent-primary-dark);
+  --color-brand-glow: var(--accent-glow);
+  --color-brand-text: var(--text-main);
+  --color-brand-dim: var(--text-dim);
+  --color-brand-error: var(--color-error);
+  --color-brand-success: var(--color-success);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-cairo: var(--font-cairo);
+  --font-inter: var(--font-inter);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: var(--font-cairo), var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+/* Custom autofill style overrides to prevent default browser white background in dark mode */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #05060f inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.dir-ltr {
+  direction: ltr !important;
 }
