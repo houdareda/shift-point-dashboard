@@ -49,6 +49,15 @@ export async function addAgentAction(
   const password = formData.get('password') as string
   const role = formData.get('role') as string
   const teamId = formData.get('teamId') as string
+  const sys1 = formData.get('sys1') as string
+  const sys2 = formData.get('sys2') as string
+  const sys3 = formData.get('sys3') as string
+
+  const sheetsObj: Record<string, string> = {}
+  if (sys1?.trim()) sheetsObj.sys1 = sys1.trim()
+  if (sys2?.trim()) sheetsObj.sys2 = sys2.trim()
+  if (sys3?.trim()) sheetsObj.sys3 = sys3.trim()
+  const agentSheets = Object.keys(sheetsObj).length > 0 ? sheetsObj : null
 
   // 1. Validate inputs on server side
   const validation = agentSchema.safeParse({
@@ -133,6 +142,7 @@ export async function addAgentAction(
         full_name: fullName,
         role: role.toLowerCase(),
         team_id: teamId || null,
+        agent_sheets: agentSheets,
       })
 
     if (profileInsertError) {
@@ -153,7 +163,7 @@ export async function addAgentAction(
     return {
       success: true,
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Add agent exception:', error)
     return {
       success: false,
@@ -166,7 +176,8 @@ export async function updateAgentAction(
   agentId: string,
   fullName: string,
   role: string,
-  teamId: string | null
+  teamId: string | null,
+  agentSheets: Record<string, string> | null
 ): Promise<{ success: boolean; error?: string }> {
   const suspension = await checkUserSuspension()
   if (suspension.suspended) {
@@ -220,6 +231,7 @@ export async function updateAgentAction(
         full_name: fullName,
         role: role.toLowerCase(),
         team_id: teamId || null,
+        agent_sheets: agentSheets,
       })
       .eq('id', agentId)
 
@@ -233,7 +245,7 @@ export async function updateAgentAction(
 
     revalidatePath('/dashboard/agents')
     return { success: true }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Update agent exception:', error)
     return {
       success: false,
@@ -312,7 +324,7 @@ export async function toggleAgentSuspensionAction(
 
     revalidatePath('/dashboard/agents')
     return { success: true }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Toggle agent status exception:', error)
     return {
       success: false,

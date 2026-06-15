@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { Receipt, Wallet, ArrowUpLeft, Coins, PieChart, ShieldAlert } from 'lucide-react'
+import { Receipt, Wallet, ArrowUpLeft, PieChart, ShieldAlert } from 'lucide-react'
 
 interface WalletItem {
   id: string
@@ -25,6 +25,7 @@ interface DashboardClientProps {
   initialReports: ReportItem[]
   userId: string
   profileName: string
+  agentSheets?: Record<string, string> | null
 }
 
 const WALLET_COLORS = [
@@ -40,11 +41,14 @@ export default function DashboardClient({
   initialReports,
   userId,
   profileName,
+  agentSheets,
 }: DashboardClientProps) {
   const [wallets, setWallets] = useState<WalletItem[]>(initialWallets)
   const [reports, setReports] = useState<ReportItem[]>(initialReports)
+  const [sheets, setSheets] = useState<Record<string, string> | null>(agentSheets || null)
 
   const tzOffset = new Date().getTimezoneOffset() * 60000
+  // eslint-disable-next-line react-hooks/purity
   const todayLocal = new Date(Date.now() - tzOffset).toISOString().split('T')[0]
   const currentMonthStr = todayLocal.substring(0, 7) // "YYYY-MM"
   const firstDayOfMonth = `${currentMonthStr}-01`
@@ -73,6 +77,17 @@ export default function DashboardClient({
 
     if (rData) {
       setReports(rData)
+    }
+
+    // 3. Fetch user profile agent_sheets
+    const { data: pData } = await supabase
+      .from('profiles')
+      .select('agent_sheets')
+      .eq('id', userId)
+      .single()
+
+    if (pData) {
+      setSheets(pData.agent_sheets as Record<string, string> | null)
     }
   }
 
@@ -115,10 +130,29 @@ export default function DashboardClient({
       )
       .subscribe()
 
+    // Subscribe to profile updates
+    const profileChannel = supabase
+      .channel('dashboard-realtime-profile')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${userId}`,
+        },
+        () => {
+          fetchLatestData()
+        }
+      )
+      .subscribe()
+
     return () => {
       supabase.removeChannel(walletsChannel)
       supabase.removeChannel(reportsChannel)
+      supabase.removeChannel(profileChannel)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
   // Calculation for Wallets
@@ -165,6 +199,68 @@ export default function DashboardClient({
           </p>
         </div>
       </div>
+
+      {/* Quick Access links */}
+      {sheets && Object.keys(sheets).some((key) => sheets[key]?.trim()) && (
+        <div className="space-y-3 animate-fade-in text-right">
+          <h2 className="text-xs font-bold text-brand-accent tracking-wider uppercase">الوصول السريع (Quick Access)</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {sheets.sys1?.trim() && (
+              <a
+                href={sheets.sys1.trim()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative flex items-center justify-between p-4 rounded-2xl bg-brand-card border border-brand-border hover:border-[#3451b2]/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)] overflow-hidden cursor-pointer"
+              >
+                <div className="absolute -top-[50px] -left-[50px] w-[100px] h-[100px] bg-[#3451b2]/10 rounded-full blur-[25px] pointer-events-none" />
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">📊</span>
+                  <span className="text-sm font-bold text-white group-hover:text-[#6080fa] transition-colors">
+                    شيت Marketing Sys 1
+                  </span>
+                </div>
+                <ArrowUpLeft className="h-4 w-4 text-brand-dim group-hover:text-[#6080fa] group-hover:translate-x-[-2px] group-hover:translate-y-[2px] transition-all duration-300" />
+              </a>
+            )}
+
+            {sheets.sys2?.trim() && (
+              <a
+                href={sheets.sys2.trim()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative flex items-center justify-between p-4 rounded-2xl bg-brand-card border border-brand-border hover:border-[#437c28]/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)] overflow-hidden cursor-pointer"
+              >
+                <div className="absolute -top-[50px] -left-[50px] w-[100px] h-[100px] bg-[#437c28]/10 rounded-full blur-[25px] pointer-events-none" />
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">📊</span>
+                  <span className="text-sm font-bold text-white group-hover:text-[#70c945] transition-colors">
+                    شيت Marketing Sys 2
+                  </span>
+                </div>
+                <ArrowUpLeft className="h-4 w-4 text-brand-dim group-hover:text-[#70c945] group-hover:translate-x-[-2px] group-hover:translate-y-[2px] transition-all duration-300" />
+              </a>
+            )}
+
+            {sheets.sys3?.trim() && (
+              <a
+                href={sheets.sys3.trim()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative flex items-center justify-between p-4 rounded-2xl bg-brand-card border border-brand-border hover:border-[#301a6b]/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)] overflow-hidden cursor-pointer"
+              >
+                <div className="absolute -top-[50px] -left-[50px] w-[100px] h-[100px] bg-[#301a6b]/10 rounded-full blur-[25px] pointer-events-none" />
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">📊</span>
+                  <span className="text-sm font-bold text-white group-hover:text-[#845ef7] transition-colors">
+                    شيت Marketing Sys 3
+                  </span>
+                </div>
+                <ArrowUpLeft className="h-4 w-4 text-brand-dim group-hover:text-[#845ef7] group-hover:translate-x-[-2px] group-hover:translate-y-[2px] transition-all duration-300" />
+              </a>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Overview Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -20,7 +20,8 @@ import {
   CheckSquare,
   BarChart3,
   LineChart,
-  TrendingUp
+  TrendingUp,
+  History
 } from 'lucide-react'
 
 interface Profile {
@@ -97,6 +98,12 @@ const NAV_ITEMS: NavItem[] = [
     name: 'تحليل الأداء',
     href: '/dashboard/performance',
     icon: TrendingUp,
+    roles: ['admin', 'owner', 'leader', 'agent', 'accountant', 'employee'],
+  },
+  {
+    name: 'سجل العمليات',
+    href: '/dashboard/transactions',
+    icon: History,
     roles: ['admin', 'owner', 'leader', 'agent', 'accountant', 'employee'],
   },
 ]

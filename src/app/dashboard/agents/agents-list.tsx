@@ -13,16 +13,18 @@ import {
   AlertCircle,
   Loader2,
   X,
-  CheckCircle2
+  CheckCircle2,
+  ExternalLink
 } from 'lucide-react'
 import { updateAgentAction, toggleAgentSuspensionAction } from '@/app/actions/agents'
 
-interface Agent {
+export interface Agent {
   id: string
   full_name: string | null
   role: string | null
   team_id: string | null
   created_at: string
+  agent_sheets?: Record<string, string> | null
 }
 
 interface AgentsListProps {
@@ -32,7 +34,7 @@ interface AgentsListProps {
 
 interface RoleDetail {
   label: string
-  icon: React.ComponentType<any>
+  icon: React.ComponentType<{ className?: string }>
   color: string
 }
 
@@ -57,6 +59,9 @@ export default function AgentsList({ initialAgents, userRole }: AgentsListProps)
   const [editName, setEditName] = useState('')
   const [editRole, setEditRole] = useState('')
   const [editTeamId, setEditTeamId] = useState('')
+  const [editSys1, setEditSys1] = useState('')
+  const [editSys2, setEditSys2] = useState('')
+  const [editSys3, setEditSys3] = useState('')
 
   // UI States
   const [isPending, setIsPending] = useState(false)
@@ -68,6 +73,7 @@ export default function AgentsList({ initialAgents, userRole }: AgentsListProps)
   })
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAgents(initialAgents)
   }, [initialAgents])
 
@@ -137,6 +143,9 @@ export default function AgentsList({ initialAgents, userRole }: AgentsListProps)
     setEditName(agent.full_name || '')
     setEditRole(agent.role || 'agent')
     setEditTeamId(agent.team_id || '')
+    setEditSys1(agent.agent_sheets?.sys1 || '')
+    setEditSys2(agent.agent_sheets?.sys2 || '')
+    setEditSys3(agent.agent_sheets?.sys3 || '')
     setActionError('')
   }
 
@@ -149,11 +158,19 @@ export default function AgentsList({ initialAgents, userRole }: AgentsListProps)
 
     try {
       const trimmedTeamId = editTeamId.trim() || null
+      
+      const sheetsObj: Record<string, string> = {}
+      if (editSys1.trim()) sheetsObj.sys1 = editSys1.trim()
+      if (editSys2.trim()) sheetsObj.sys2 = editSys2.trim()
+      if (editSys3.trim()) sheetsObj.sys3 = editSys3.trim()
+      const agentSheets = Object.keys(sheetsObj).length > 0 ? sheetsObj : null
+
       const res = await updateAgentAction(
         editingAgent.id,
         editName,
         editRole,
-        trimmedTeamId
+        trimmedTeamId,
+        agentSheets
       )
 
       if (res.success) {
@@ -161,7 +178,7 @@ export default function AgentsList({ initialAgents, userRole }: AgentsListProps)
         setAgents((prev) =>
           prev.map((a) =>
             a.id === editingAgent.id
-              ? { ...a, full_name: editName, role: editRole, team_id: trimmedTeamId }
+              ? { ...a, full_name: editName, role: editRole, team_id: trimmedTeamId, agent_sheets: agentSheets }
               : a
           )
         )
@@ -250,6 +267,7 @@ export default function AgentsList({ initialAgents, userRole }: AgentsListProps)
               <th className="pb-4 pt-2 font-semibold">الاسم الكامل</th>
               <th className="pb-4 pt-2 font-semibold">الدور الصلاحية</th>
               <th className="pb-4 pt-2 font-semibold">رقم الفريق (Team ID)</th>
+              <th className="pb-4 pt-2 font-semibold text-right">الشيتات</th>
               <th className="pb-4 pt-2 font-semibold hidden md:table-cell">تاريخ الإنشاء</th>
               {isAdmin && <th className="pb-4 pt-2 font-semibold text-left pl-8">الإجراءات</th>}
             </tr>
@@ -286,6 +304,51 @@ export default function AgentsList({ initialAgents, userRole }: AgentsListProps)
                   {/* Team ID */}
                   <td className="py-4 font-mono text-brand-dim">
                     {agent.team_id || '—'}
+                  </td>
+
+                  {/* Sheets links */}
+                  <td className="py-4">
+                    <div className="flex items-center gap-1.5 justify-start">
+                      {agent.agent_sheets && Object.keys(agent.agent_sheets).length > 0 ? (
+                        <>
+                          {agent.agent_sheets.sys1 && (
+                            <a
+                              href={agent.agent_sheets.sys1}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-[#3451b2]/15 border border-[#3451b2]/30 text-[#6080fa] hover:bg-[#3451b2]/30 hover:text-white transition-all"
+                            >
+                              <span>Sys 1</span>
+                              <ExternalLink className="h-2.5 w-2.5" />
+                            </a>
+                          )}
+                          {agent.agent_sheets.sys2 && (
+                            <a
+                              href={agent.agent_sheets.sys2}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-[#437c28]/15 border border-[#437c28]/30 text-[#70c945] hover:bg-[#437c28]/30 hover:text-white transition-all"
+                            >
+                              <span>Sys 2</span>
+                              <ExternalLink className="h-2.5 w-2.5" />
+                            </a>
+                          )}
+                          {agent.agent_sheets.sys3 && (
+                            <a
+                              href={agent.agent_sheets.sys3}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-[#301a6b]/15 border border-[#301a6b]/30 text-[#845ef7] hover:bg-[#301a6b]/30 hover:text-white transition-all"
+                            >
+                              <span>Sys 3</span>
+                              <ExternalLink className="h-2.5 w-2.5" />
+                            </a>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-brand-dim">—</span>
+                      )}
+                    </div>
                   </td>
 
                   {/* Created At Date */}
@@ -402,6 +465,52 @@ export default function AgentsList({ initialAgents, userRole }: AgentsListProps)
                   className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-3 px-4 text-white focus:border-brand-accent focus:ring-1 focus:ring-brand-glow/30 focus:outline-none transition-all duration-300 text-sm text-left font-mono placeholder:text-white/20 placeholder:text-right"
                   disabled={isPending}
                 />
+              </div>
+
+              {/* Google Sheets Links */}
+              <div className="border-t border-brand-border/60 pt-4.5 space-y-3">
+                <h4 className="text-xs font-bold text-brand-accent text-right">روابط الشيتات (Google Sheets)</h4>
+                
+                <div className="space-y-3">
+                  {/* Sys 1 link */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-semibold text-brand-dim">رابط شيت Marketing Sys 1</label>
+                    <input
+                      type="url"
+                      placeholder="رابط شيت النظام الأول"
+                      value={editSys1}
+                      onChange={(e) => setEditSys1(e.target.value)}
+                      className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-2.5 px-3 text-white focus:border-brand-accent focus:outline-none transition-all duration-300 text-xs text-left dir-ltr"
+                      disabled={isPending}
+                    />
+                  </div>
+
+                  {/* Sys 2 link */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-semibold text-brand-dim">رابط شيت Marketing Sys 2</label>
+                    <input
+                      type="url"
+                      placeholder="رابط شيت النظام الثاني"
+                      value={editSys2}
+                      onChange={(e) => setEditSys2(e.target.value)}
+                      className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-2.5 px-3 text-white focus:border-brand-accent focus:outline-none transition-all duration-300 text-xs text-left dir-ltr"
+                      disabled={isPending}
+                    />
+                  </div>
+
+                  {/* Sys 3 link */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-semibold text-brand-dim">رابط شيت Marketing Sys 3</label>
+                    <input
+                      type="url"
+                      placeholder="رابط شيت النظام الثالث"
+                      value={editSys3}
+                      onChange={(e) => setEditSys3(e.target.value)}
+                      className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-2.5 px-3 text-white focus:border-brand-accent focus:outline-none transition-all duration-300 text-xs text-left dir-ltr"
+                      disabled={isPending}
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Action Buttons */}

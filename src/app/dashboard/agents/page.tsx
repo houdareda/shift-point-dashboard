@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Users, UserPlus } from 'lucide-react'
-import AgentsList from './agents-list'
+import AgentsList, { Agent } from './agents-list'
 
 export default async function AgentsPage() {
   const supabase = await createClient()
@@ -76,7 +76,7 @@ export default async function AgentsPage() {
             حدث خطأ أثناء جلب قائمة الموظفين. يرجى المحاولة مرة أخرى.
           </div>
         ) : (
-          <AgentsList initialAgents={(agents as any) || []} userRole={userRole} />
+          <AgentsList initialAgents={(agents as unknown as Agent[]) || []} userRole={userRole} />
         )}
       </div>
     </div>
