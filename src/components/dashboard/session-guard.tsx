@@ -54,5 +54,24 @@ export default function SessionGuard() {
     }
   }, [router])
 
+  // Disable mouse scroll / wheel value changes on focused number inputs globally
+  useEffect(() => {
+    const handleWheel = () => {
+      const activeEl = document.activeElement
+      if (
+        activeEl &&
+        activeEl.tagName === 'INPUT' &&
+        (activeEl as HTMLInputElement).type === 'number'
+      ) {
+        ;(activeEl as HTMLInputElement).blur()
+      }
+    }
+
+    document.addEventListener('wheel', handleWheel)
+    return () => {
+      document.removeEventListener('wheel', handleWheel)
+    }
+  }, [])
+
   return null
 }

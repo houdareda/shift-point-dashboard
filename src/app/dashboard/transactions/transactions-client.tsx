@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import {
   History,
@@ -545,8 +545,8 @@ export default function TransactionsClient() {
                     const agentName = agentNameMap[report.agent_id] || 'موظف غير معروف'
 
                     return (
-                      <>
-                        <tr key={report.id} className="hover:bg-white/[0.01] transition-colors group">
+                      <React.Fragment key={report.id}>
+                        <tr className="hover:bg-white/[0.01] transition-colors group">
                           {/* Agent Name (Manager only) */}
                           {isManager && (
                             <td className="px-6 py-4.5 font-semibold text-white group-hover:text-brand-accent transition-colors">
@@ -616,7 +616,7 @@ export default function TransactionsClient() {
                                   {report.transfers.map((item, idx) => {
                                     const recipientName = agentNameMap[item.target_agent_id] || 'موظف غير معروف'
                                     return (
-                                      <li key={idx} className="flex items-center justify-start gap-2 text-white/90">
+                                      <li key={`${report.id}-transfer-${idx}`} className="flex items-center justify-start gap-2 text-white/90">
                                         <ArrowUpRight className="h-3.5 w-3.5 text-brand-accent shrink-0" />
                                         <span>تحويل بمبلغ </span>
                                         <strong className="text-white font-mono">{Number(item.amount).toLocaleString('en-US')} ج.م</strong>
@@ -630,7 +630,7 @@ export default function TransactionsClient() {
                             </td>
                           </tr>
                         )}
-                      </>
+                      </React.Fragment>
                     )
                   })}
                 </tbody>

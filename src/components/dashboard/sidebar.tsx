@@ -6,10 +6,7 @@ import { signOutAction } from '@/app/actions/auth'
 import {
   LayoutDashboard,
   Users,
-  Target,
   Wallet,
-  Receipt,
-  Settings,
   LogOut,
   X,
   User,
@@ -19,15 +16,18 @@ import {
   ClipboardList,
   CheckSquare,
   BarChart3,
-  LineChart,
   TrendingUp,
-  History
+  History,
+  ExternalLink,
+  SlidersHorizontal,
+  Calculator
 } from 'lucide-react'
 
 interface Profile {
   full_name: string
   role: string
   email: string
+  agent_sheets?: Record<string, string> | null
 }
 
 interface SidebarProps {
@@ -36,7 +36,7 @@ interface SidebarProps {
   onClose: () => void
 }
 
-const ROLE_DISPLAY: Record<string, { label: string; icon: any; color: string }> = {
+const ROLE_DISPLAY: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; color: string }> = {
   admin: { label: 'مدير النظام', icon: Shield, color: 'text-red-400 bg-red-400/10' },
   owner: { label: 'مدير النظام', icon: Shield, color: 'text-red-400 bg-red-400/10' },
   leader: { label: 'قائد فريق', icon: Award, color: 'text-amber-400 bg-amber-400/10' },
@@ -47,7 +47,7 @@ const ROLE_DISPLAY: Record<string, { label: string; icon: any; color: string }> 
 interface NavItem {
   name: string
   href: string
-  icon: React.ComponentType<any>
+  icon: React.ComponentType<{ className?: string }>
   roles: string[]
 }
 
@@ -68,7 +68,7 @@ const NAV_ITEMS: NavItem[] = [
     name: 'إدارة المحافظ',
     href: '/dashboard/wallets',
     icon: Wallet,
-    roles: ['accountant', 'agent'],
+    roles: ['agent'],
   },
   {
     name: 'العمليات اليومية',
@@ -77,10 +77,10 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['agent', 'leader'],
   },
   {
-    name: 'تقريري المالي',
-    href: '/dashboard/my-report',
-    icon: LineChart,
-    roles: ['agent', 'employee'],
+    name: 'حسابات الـ CPL والكاش',
+    href: '/dashboard/cpl-calculator',
+    icon: Calculator,
+    roles: ['admin', 'owner', 'leader', 'agent'],
   },
   {
     name: 'طلبات الموافقة',
@@ -89,22 +89,22 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['admin', 'owner', 'leader', 'accountant'],
   },
   {
-    name: 'التقرير المالي المجمع',
-    href: '/admin/overview',
-    icon: BarChart3,
-    roles: ['admin', 'owner', 'leader', 'accountant'],
-  },
-  {
-    name: 'تحليل الأداء',
+    name: 'شيتات الانالسيز',
     href: '/dashboard/performance',
     icon: TrendingUp,
-    roles: ['admin', 'owner', 'leader', 'agent', 'accountant', 'employee'],
+    roles: ['admin', 'owner', 'leader', 'agent', 'employee'],
   },
   {
     name: 'سجل العمليات',
     href: '/dashboard/transactions',
     icon: History,
     roles: ['admin', 'owner', 'leader', 'agent', 'accountant', 'employee'],
+  },
+  {
+    name: 'إعدادات شيتات التحليل',
+    href: '/dashboard/settings/analysis',
+    icon: SlidersHorizontal,
+    roles: ['admin', 'owner'],
   },
 ]
 
@@ -118,6 +118,22 @@ export default function Sidebar({ profile, isOpen, onClose }: SidebarProps) {
   const filteredItems = NAV_ITEMS.filter((item) =>
     item.roles.includes(userRole)
   )
+
+  // Build work sheets list
+  const agentSheets = profile?.agent_sheets
+  const sheetsList = []
+  if (agentSheets) {
+    if (agentSheets.sys1?.trim()) {
+      sheetsList.push({ name: 'شيت Marketing Sys 1', url: agentSheets.sys1.trim() })
+    }
+    if (agentSheets.sys2?.trim()) {
+      sheetsList.push({ name: 'شيت Marketing Sys 2', url: agentSheets.sys2.trim() })
+    }
+    if (agentSheets.sys3?.trim()) {
+      sheetsList.push({ name: 'شيت Marketing Sys 3', url: agentSheets.sys3.trim() })
+    }
+  }
+  const hasSheets = sheetsList.length > 0 && userRole !== 'accountant'
 
   return (
     <>
@@ -178,6 +194,27 @@ export default function Sidebar({ profile, isOpen, onClose }: SidebarProps) {
               </Link>
             )
           })}
+
+          {/* Work Sheets Sub-section */}
+          {hasSheets && (
+            <div className="pt-4 border-t border-brand-border/40 mt-4 space-y-1.5">
+              <span className="block px-4 text-[10px] font-bold text-brand-accent tracking-wider uppercase mb-2">
+                شيتات العمل
+              </span>
+              {sheetsList.map((sheet) => (
+                <a
+                  key={sheet.url}
+                  href={sheet.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-brand-dim hover:text-white hover:bg-white/[0.02] border border-transparent transition-all duration-300 group cursor-pointer"
+                >
+                  <ExternalLink className="h-4.5 w-4.5 text-brand-dim group-hover:text-white transition-transform duration-300 group-hover:scale-110" />
+                  <span>{sheet.name}</span>
+                </a>
+              ))}
+            </div>
+          )}
         </nav>
 
         {/* Footer profile card and logout */}

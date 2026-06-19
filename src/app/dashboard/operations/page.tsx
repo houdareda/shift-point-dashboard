@@ -16,12 +16,25 @@ export default async function OperationsPage() {
     redirect('/login')
   }
 
-  // 2. Fetch active wallets (is_active = true) for the current user
+  // Retrieve current user's role to verify permissions
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const userRole = profile?.role?.toLowerCase() || 'agent'
+  if (userRole === 'accountant') {
+    redirect('/dashboard')
+  }
+
+  // 2. Fetch active wallets (is_active = true, is_archived = false) for the current user
   const { data: wallets, error: walletsError } = await supabase
     .from('wallets')
     .select('id, phone_number, current_balance')
     .eq('agent_id', user.id)
     .eq('is_active', true)
+    .neq('is_archived', true)
     .order('created_at', { ascending: false })
 
   if (walletsError) {

@@ -19,10 +19,10 @@ const agentSchema = z.object({
   role: z.enum(['agent', 'leader', 'accountant', 'admin'], {
     message: 'الدور المحدد غير صالح',
   }),
-  teamId: z.string().optional(),
-  sys1: z.string().optional(),
-  sys2: z.string().optional(),
-  sys3: z.string().optional(),
+  teamId: z.string().nullable().optional(),
+  sys1: z.string().nullable().optional(),
+  sys2: z.string().nullable().optional(),
+  sys3: z.string().nullable().optional(),
 })
 
 type AgentSchema = z.infer<typeof agentSchema>
@@ -35,6 +35,7 @@ export default function AgentForm() {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors: clientErrors },
   } = useForm<AgentSchema>({
     resolver: zodResolver(agentSchema),
@@ -50,6 +51,8 @@ export default function AgentForm() {
     },
   })
 
+  const selectedRole = watch('role')
+
   // Reset form upon successful user creation
   useEffect(() => {
     if (state?.success) {
@@ -63,12 +66,16 @@ export default function AgentForm() {
     formData.append('email', data.email)
     formData.append('password', data.password)
     formData.append('role', data.role)
-    if (data.teamId) {
-      formData.append('teamId', data.teamId)
+    
+    // Clean payload: only add Team ID and Sheets if role is agent
+    if (data.role === 'agent') {
+      if (data.teamId) {
+        formData.append('teamId', data.teamId)
+      }
+      if (data.sys1) formData.append('sys1', data.sys1)
+      if (data.sys2) formData.append('sys2', data.sys2)
+      if (data.sys3) formData.append('sys3', data.sys3)
     }
-    if (data.sys1) formData.append('sys1', data.sys1)
-    if (data.sys2) formData.append('sys2', data.sys2)
-    if (data.sys3) formData.append('sys3', data.sys3)
 
     startTransition(() => {
       dispatch(formData)
@@ -222,83 +229,87 @@ export default function AgentForm() {
           </div>
 
           {/* Team ID (Optional) */}
-          <div className="space-y-2 md:col-span-2">
-            <label htmlFor="teamId" className="block text-xs font-semibold text-brand-dim">
-              معرف الفريق (Team ID) - اختياري
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                id="teamId"
-                autoComplete="off"
-                placeholder="أدخل كود الفريق أو اتركه فارغاً"
-                className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-3.5 pl-4 pr-11 text-white placeholder:text-white/20 focus:border-brand-accent focus:ring-2 focus:ring-brand-glow/30 focus:outline-none transition-all duration-300 text-sm"
-                {...register('teamId')}
-                disabled={pending}
-              />
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-white/30">
-                <FolderKanban className="h-4.5 w-4.5" />
+          {selectedRole === 'agent' && (
+            <div className="space-y-2 md:col-span-2">
+              <label htmlFor="teamId" className="block text-xs font-semibold text-brand-dim">
+                معرف الفريق (Team ID) - اختياري
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  id="teamId"
+                  autoComplete="off"
+                  placeholder="أدخل كود الفريق أو اتركه فارغاً"
+                  className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-3.5 pl-4 pr-11 text-white placeholder:text-white/20 focus:border-brand-accent focus:ring-2 focus:ring-brand-glow/30 focus:outline-none transition-all duration-300 text-sm"
+                  {...register('teamId')}
+                  disabled={pending}
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-white/30">
+                  <FolderKanban className="h-4.5 w-4.5" />
+                </div>
               </div>
+              {clientErrors.teamId && (
+                <p className="text-[11px] text-brand-error font-medium">{clientErrors.teamId.message}</p>
+              )}
+              {state?.errors?.teamId && (
+                <p className="text-[11px] text-brand-error font-medium">{state.errors.teamId[0]}</p>
+              )}
             </div>
-            {clientErrors.teamId && (
-              <p className="text-[11px] text-brand-error font-medium">{clientErrors.teamId.message}</p>
-            )}
-            {state?.errors?.teamId && (
-              <p className="text-[11px] text-brand-error font-medium">{state.errors.teamId[0]}</p>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Google Sheets Links Section */}
-        <div className="border-t border-brand-border/60 pt-6 space-y-4">
-          <h3 className="text-xs font-bold text-brand-accent">روابط الشيتات الخاصة بالموظف (Google Sheets)</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Sys 1 */}
-            <div className="space-y-2">
-              <label htmlFor="sys1" className="block text-[11px] font-semibold text-brand-dim">
-                رابط شيت Marketing Sys 1
-              </label>
-              <input
-                type="url"
-                id="sys1"
-                placeholder="https://docs.google.com/..."
-                className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-3 px-4 text-white placeholder:text-white/20 focus:border-brand-accent focus:ring-1 focus:ring-brand-glow/30 focus:outline-none transition-all duration-300 text-xs text-left dir-ltr"
-                {...register('sys1')}
-                disabled={pending}
-              />
-            </div>
-            
-            {/* Sys 2 */}
-            <div className="space-y-2">
-              <label htmlFor="sys2" className="block text-[11px] font-semibold text-brand-dim">
-                رابط شيت Marketing Sys 2
-              </label>
-              <input
-                type="url"
-                id="sys2"
-                placeholder="https://docs.google.com/..."
-                className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-3 px-4 text-white placeholder:text-white/20 focus:border-brand-accent focus:ring-1 focus:ring-brand-glow/30 focus:outline-none transition-all duration-300 text-xs text-left dir-ltr"
-                {...register('sys2')}
-                disabled={pending}
-              />
-            </div>
-            
-            {/* Sys 3 */}
-            <div className="space-y-2">
-              <label htmlFor="sys3" className="block text-[11px] font-semibold text-brand-dim">
-                رابط شيت Marketing Sys 3
-              </label>
-              <input
-                type="url"
-                id="sys3"
-                placeholder="https://docs.google.com/..."
-                className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-3 px-4 text-white placeholder:text-white/20 focus:border-brand-accent focus:ring-1 focus:ring-brand-glow/30 focus:outline-none transition-all duration-300 text-xs text-left dir-ltr"
-                {...register('sys3')}
-                disabled={pending}
-              />
+        {selectedRole === 'agent' && (
+          <div className="border-t border-brand-border/60 pt-6 space-y-4">
+            <h3 className="text-xs font-bold text-brand-accent">روابط الشيتات الخاصة بالموظف (Google Sheets)</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Sys 1 */}
+              <div className="space-y-2">
+                <label htmlFor="sys1" className="block text-[11px] font-semibold text-brand-dim">
+                  رابط شيت Marketing Sys 1
+                </label>
+                <input
+                  type="url"
+                  id="sys1"
+                  placeholder="https://docs.google.com/..."
+                  className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-3 px-4 text-white placeholder:text-white/20 focus:border-brand-accent focus:ring-1 focus:ring-brand-glow/30 focus:outline-none transition-all duration-300 text-xs text-left dir-ltr"
+                  {...register('sys1')}
+                  disabled={pending}
+                />
+              </div>
+              
+              {/* Sys 2 */}
+              <div className="space-y-2">
+                <label htmlFor="sys2" className="block text-[11px] font-semibold text-brand-dim">
+                  رابط شيت Marketing Sys 2
+                </label>
+                <input
+                  type="url"
+                  id="sys2"
+                  placeholder="https://docs.google.com/..."
+                  className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-3 px-4 text-white placeholder:text-white/20 focus:border-brand-accent focus:ring-1 focus:ring-brand-glow/30 focus:outline-none transition-all duration-300 text-xs text-left dir-ltr"
+                  {...register('sys2')}
+                  disabled={pending}
+                />
+              </div>
+              
+              {/* Sys 3 */}
+              <div className="space-y-2">
+                <label htmlFor="sys3" className="block text-[11px] font-semibold text-brand-dim">
+                  رابط شيت Marketing Sys 3
+                </label>
+                <input
+                  type="url"
+                  id="sys3"
+                  placeholder="https://docs.google.com/..."
+                  className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-3 px-4 text-white placeholder:text-white/20 focus:border-brand-accent focus:ring-1 focus:ring-brand-glow/30 focus:outline-none transition-all duration-300 text-xs text-left dir-ltr"
+                  {...register('sys3')}
+                  disabled={pending}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Submit Button */}
         <div className="pt-4">

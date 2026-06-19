@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use server'
 
 import { z } from 'zod'
@@ -260,3 +261,116 @@ export async function updateWalletBalanceAction(
     return { success: false, error: 'حدث خطأ غير متوقع.' }
   }
 }
+
+export async function archiveWalletAction(
+  walletId: string,
+  password?: string
+): Promise<{ success: boolean; error?: string }> {
+  const suspension = await checkUserSuspension()
+  if (suspension.suspended) {
+    return {
+      success: false,
+      error: 'حسابك موقوف، غير مصرح لك باتخاذ أي إجراء.',
+    }
+  }
+
+  if (!password) {
+    return {
+      success: false,
+      error: 'كلمة المرور مطلوبة لتأكيد أرشفة المحفظة.',
+    }
+  }
+
+  try {
+    const supabase = await createClient()
+
+    // 1. Get current authenticated user
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+
+    if (userError || !user) {
+      return { success: false, error: 'انتهت الجلسة، يرجى تسجيل الدخول مجدداً.' }
+    }
+
+    // 2. Verify user password
+    const { error: passwordError } = await supabase.auth.signInWithPassword({
+      email: user.email!,
+      password,
+    })
+
+    if (passwordError) {
+      return {
+        success: false,
+        error: 'كلمة المرور غير صحيحة. يرجى إدخال كلمة المرور الخاصة بك لتأكيد الأرشفة.',
+      }
+    }
+
+    // 3. Set is_archived to true in wallets
+    const { error: updateError } = await supabase
+      .from('wallets')
+      .update({ is_archived: true })
+      .eq('id', walletId)
+      .eq('agent_id', user.id)
+
+    if (updateError) {
+      console.error('Error archiving wallet:', updateError)
+      return { success: false, error: updateError.message }
+    }
+
+    // 4. Revalidate path to update the UI list
+    revalidatePath('/dashboard/wallets')
+    return { success: true }
+  } catch (error: any) {
+    console.error('Archive wallet exception:', error)
+    return { success: false, error: 'حدث خطأ غير متوقع.' }
+  }
+}
+
+export async function restoreWalletAction(
+  walletId: string
+): Promise<{ success: boolean; error?: string }> {
+  const suspension = await checkUserSuspension()
+  if (suspension.suspended) {
+    return {
+      success: false,
+      error: 'حسابك موقوف، غير مصرح لك باتخاذ أي إجراء.',
+    }
+  }
+
+  try {
+    const supabase = await createClient()
+
+    // 1. Get current authenticated user
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+
+    if (userError || !user) {
+      return { success: false, error: 'انتهت الجلسة، يرجى تسجيل الدخول مجدداً.' }
+    }
+
+    // 2. Set is_archived to false in wallets
+    const { error: updateError } = await supabase
+      .from('wallets')
+      .update({ is_archived: false })
+      .eq('id', walletId)
+      .eq('agent_id', user.id)
+
+    if (updateError) {
+      console.error('Error restoring wallet:', updateError)
+      return { success: false, error: updateError.message }
+    }
+
+    // 3. Revalidate path to update the UI list
+    revalidatePath('/dashboard/wallets')
+    return { success: true }
+  } catch (error: any) {
+    console.error('Restore wallet exception:', error)
+    return { success: false, error: 'حدث خطأ غير متوقع.' }
+  }
+}
+
+

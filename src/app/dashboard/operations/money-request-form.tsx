@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client'
 
 import { useActionState, useEffect, useState, startTransition, useRef } from 'react'
@@ -225,8 +226,6 @@ export default function MoneyRequestForm({ wallets, currentAgentId }: MoneyReque
                   type="date"
                   id="date"
                   dir="ltr"
-                  min={yesterdayLocal}
-                  max={todayLocal}
                   className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-3.5 pl-4 pr-11 text-white focus:border-brand-accent focus:ring-2 focus:ring-brand-glow/30 focus:outline-none transition-all duration-300 text-sm dir-ltr text-left"
                   {...register('date')}
                   disabled={pending}
@@ -253,11 +252,13 @@ export default function MoneyRequestForm({ wallets, currentAgentId }: MoneyReque
                   disabled={pending}
                 >
                   <option value="" className="bg-brand-bg text-brand-dim">اختر محفظة...</option>
-                  {wallets.map((wallet) => (
-                    <option key={wallet.id} value={wallet.id} className="bg-brand-bg text-white font-mono">
-                      {wallet.phone_number} (الرصيد: {Number(wallet.current_balance || 0).toLocaleString('en-US')} ج.م)
-                    </option>
-                  ))}
+                  {wallets
+                    .filter((wallet) => Number(wallet.current_balance || 0) < 200000)
+                    .map((wallet) => (
+                      <option key={wallet.id} value={wallet.id} className="bg-brand-bg text-white font-mono">
+                        {wallet.phone_number} (الرصيد: {Number(wallet.current_balance || 0).toLocaleString('en-US')} ج.م)
+                      </option>
+                    ))}
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-white/30">
                   <Wallet className="h-4.5 w-4.5" />

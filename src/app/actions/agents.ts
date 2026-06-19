@@ -17,7 +17,7 @@ const agentSchema = z.object({
   role: z.enum(['agent', 'leader', 'accountant', 'admin'], {
     message: 'الدور المحدد غير صالح',
   }),
-  teamId: z.string().optional(),
+  teamId: z.string().nullable().optional(),
 })
 
 export type AgentFormState = {
@@ -48,15 +48,21 @@ export async function addAgentAction(
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const role = formData.get('role') as string
-  const teamId = formData.get('teamId') as string
+  const rawTeamId = formData.get('teamId') as string | null
+  const teamId = rawTeamId?.trim() ? rawTeamId.trim() : null
   const sys1 = formData.get('sys1') as string
   const sys2 = formData.get('sys2') as string
   const sys3 = formData.get('sys3') as string
 
+  const isAgent = role?.toLowerCase() === 'agent'
+  const finalTeamId = isAgent ? teamId : null
+
   const sheetsObj: Record<string, string> = {}
-  if (sys1?.trim()) sheetsObj.sys1 = sys1.trim()
-  if (sys2?.trim()) sheetsObj.sys2 = sys2.trim()
-  if (sys3?.trim()) sheetsObj.sys3 = sys3.trim()
+  if (isAgent) {
+    if (sys1?.trim()) sheetsObj.sys1 = sys1.trim()
+    if (sys2?.trim()) sheetsObj.sys2 = sys2.trim()
+    if (sys3?.trim()) sheetsObj.sys3 = sys3.trim()
+  }
   const agentSheets = Object.keys(sheetsObj).length > 0 ? sheetsObj : null
 
   // 1. Validate inputs on server side
@@ -65,7 +71,7 @@ export async function addAgentAction(
     email,
     password,
     role,
-    teamId,
+    teamId: finalTeamId,
   })
 
   if (!validation.success) {
@@ -141,7 +147,7 @@ export async function addAgentAction(
         id: newUserId,
         full_name: fullName,
         role: role.toLowerCase(),
-        team_id: teamId || null,
+        team_id: finalTeamId,
         agent_sheets: agentSheets,
       })
 
@@ -225,13 +231,17 @@ export async function updateAgentAction(
       }
     )
 
+    const isAgent = role.toLowerCase() === 'agent'
+    const finalTeamId = isAgent ? teamId : null
+    const finalAgentSheets = isAgent ? agentSheets : null
+
     const { error: updateError } = await supabaseAdmin
       .from('profiles')
       .update({
         full_name: fullName,
         role: role.toLowerCase(),
-        team_id: teamId || null,
-        agent_sheets: agentSheets,
+        team_id: finalTeamId,
+        agent_sheets: finalAgentSheets,
       })
       .eq('id', agentId)
 

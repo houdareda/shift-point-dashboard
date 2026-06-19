@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import DashboardClient from './dashboard-client'
 import AdminDashboardClient from './admin-dashboard-client'
+import { getIncomingTransfersAction } from '@/app/actions/operations'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,6 +43,7 @@ export default async function DashboardPage() {
     const { data: wallets } = await supabase
       .from('wallets')
       .select('id, phone_number, current_balance, is_active, agent_id')
+      .neq('is_archived', true)
       .order('created_at', { ascending: false })
 
     // 3. Fetch all daily reports
@@ -49,11 +51,18 @@ export default async function DashboardPage() {
       .from('daily_reports')
       .select('id, personal_expenses, marketing_1_expenses, marketing_2_expenses, marketing_3_expenses, report_date, transfers, agent_id')
 
+    // 4. Fetch all money requests
+    const { data: moneyRequests } = await supabase
+      .from('money_requests')
+      .select('id, amount, status, request_date, agent_id')
+      .order('request_date', { ascending: false })
+
     return (
       <AdminDashboardClient
         agents={agents || []}
         initialWallets={wallets || []}
         initialReports={reports || []}
+        initialMoneyRequests={moneyRequests || []}
         profileName={profileName}
         userRole={userRole}
       />
@@ -64,39 +73,52 @@ export default async function DashboardPage() {
   const tzOffset = new Date().getTimezoneOffset() * 60000
   // eslint-disable-next-line react-hooks/purity
   const todayLocal = new Date(Date.now() - tzOffset).toISOString().split('T')[0]
-  const currentMonthStr = todayLocal.substring(0, 7) // Format: "YYYY-MM"
-  const firstDayOfMonth = `${currentMonthStr}-01`
 
-  // 4. Fetch agent's active wallets (is_active = true)
+  // 4. Fetch agent's active wallets (is_active = true, is_archived = false)
   const { data: wallets, error: walletsError } = await supabase
     .from('wallets')
     .select('id, phone_number, current_balance, is_active')
     .eq('agent_id', user.id)
     .eq('is_active', true)
+    .neq('is_archived', true)
     .order('created_at', { ascending: false })
 
   if (walletsError) {
     console.error('Error fetching active wallets for dashboard overview:', walletsError)
   }
 
-  // 5. Fetch agent's daily reports for the current month
+  // 5. Fetch agent's daily reports (all-time)
   const { data: reports, error: reportsError } = await supabase
     .from('daily_reports')
-    .select('personal_expenses, marketing_1_expenses, marketing_2_expenses, marketing_3_expenses, report_date, transfers')
+    .select('personal_expenses, marketing_1_expenses, marketing_2_expenses, marketing_3_expenses, report_date, transfers, total_amount')
     .eq('agent_id', user.id)
-    .gte('report_date', firstDayOfMonth)
 
   if (reportsError) {
     console.error('Error fetching daily reports for dashboard overview:', reportsError)
   }
 
+  // 6. Fetch agent's money requests (all-time)
+  const { data: moneyRequests, error: moneyRequestsError } = await supabase
+    .from('money_requests')
+    .select('amount, status, request_date')
+    .eq('agent_id', user.id)
+    .order('request_date', { ascending: false })
+
+  if (moneyRequestsError) {
+    console.error('Error fetching money requests for dashboard overview:', moneyRequestsError)
+  }
+
+  // 7. Fetch incoming transfers (all-time)
+  const incomingReports = await getIncomingTransfersAction(user.id)
+
   return (
     <DashboardClient
       initialWallets={wallets || []}
       initialReports={reports || []}
+      initialMoneyRequests={moneyRequests || []}
+      initialIncomingReports={incomingReports}
       userId={user.id}
       profileName={profileName}
-      agentSheets={profile?.agent_sheets as Record<string, string> | null}
     />
   )
 }

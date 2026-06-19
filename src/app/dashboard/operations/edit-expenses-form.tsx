@@ -1,11 +1,11 @@
 'use client'
 
-import { useActionState, useEffect, useState, startTransition } from 'react'
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useActionState, useEffect, useState, startTransition, useMemo } from 'react'
+import { useForm, useFieldArray, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { fetchDailyReportAction, submitExpenseEditRequestAction } from '@/app/actions/operations'
-import { Calendar, Receipt, DollarSign, Loader2, Send, CheckCircle, AlertCircle, UserPlus, Trash2, User } from 'lucide-react'
+import { Calendar, Receipt, DollarSign, Loader2, Send, CheckCircle, AlertCircle, UserPlus, Trash2, User, Calculator } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 
 // Zod Schema for validation
@@ -21,6 +21,10 @@ const editExpensesSchema = z.object({
   marketing1Expenses: z.coerce.number().min(0, 'يجب أن يكون المبلغ صفر أو أكثر').default(0),
   marketing2Expenses: z.coerce.number().min(0, 'يجب أن يكون المبلغ صفر أو أكثر').default(0),
   marketing3Expenses: z.coerce.number().min(0, 'يجب أن يكون المبلغ صفر أو أكثر').default(0),
+  totalExpenses: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? 0 : val),
+    z.coerce.number().min(0, 'يجب أن يكون الإجمالي صفر أو أكثر').default(0)
+  ),
   transfers: z.array(transferItemSchema).default([]),
 })
 
@@ -118,9 +122,26 @@ export default function EditExpensesForm({ agents, currentAgentId }: EditExpense
       marketing1Expenses: 0,
       marketing2Expenses: 0,
       marketing3Expenses: 0,
+      totalExpenses: 0,
       transfers: [],
     },
   })
+
+  // Live calculation of all expense values and transfers for edit request
+  const personalExpenses = useWatch({ control, name: 'personalExpenses' })
+  const marketing1Expenses = useWatch({ control, name: 'marketing1Expenses' })
+  const marketing2Expenses = useWatch({ control, name: 'marketing2Expenses' })
+  const marketing3Expenses = useWatch({ control, name: 'marketing3Expenses' })
+  const transfers = useWatch({ control, name: 'transfers' })
+
+  const totalExpensesAndTransfers = useMemo(() => {
+    const p = Number(personalExpenses) || 0
+    const m1 = Number(marketing1Expenses) || 0
+    const m2 = Number(marketing2Expenses) || 0
+    const m3 = Number(marketing3Expenses) || 0
+    const t = (transfers || []).reduce((sum, item) => sum + (Number(item?.amount) || 0), 0)
+    return p + m1 + m2 + m3 + t
+  }, [personalExpenses, marketing1Expenses, marketing2Expenses, marketing3Expenses, transfers])
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -177,6 +198,9 @@ export default function EditExpensesForm({ agents, currentAgentId }: EditExpense
       if (state.errors.transfers) {
         setError('transfers', { type: 'server', message: state.errors.transfers[0] })
       }
+      if (state.errors.totalExpenses) {
+        setError('totalExpenses', { type: 'server', message: state.errors.totalExpenses[0] })
+      }
     }
   }, [state, setError])
 
@@ -209,6 +233,7 @@ export default function EditExpensesForm({ agents, currentAgentId }: EditExpense
         setValue('marketing1Expenses', res.data.marketing_1_expenses)
         setValue('marketing2Expenses', res.data.marketing_2_expenses)
         setValue('marketing3Expenses', res.data.marketing_3_expenses)
+        setValue('totalExpenses', res.data.total_amount || 0)
 
         // Map DB transfers JSONB structure back to client input format
         if (res.data.transfers && Array.isArray(res.data.transfers)) {
@@ -232,6 +257,18 @@ export default function EditExpensesForm({ agents, currentAgentId }: EditExpense
   }
 
   const onSubmit = (data: EditExpensesSchema) => {
+    // Validate that the user inputted total matches the actual calculated total
+    const computedTotal = totalExpensesAndTransfers
+    const userEnteredTotal = Number(data.totalExpenses) || 0
+
+    if (Math.abs(userEnteredTotal - computedTotal) > 0.01) {
+      setError('totalExpenses', {
+        type: 'manual',
+        message: `المجموع المدخل (${userEnteredTotal.toFixed(2)}) غير مطابق للمجموع الفعلي للمصاريف والتحويلات (الفعلي: ${computedTotal.toFixed(2)} ج.م)`,
+      })
+      return
+    }
+
     const formData = new FormData()
     formData.append('reportId', data.reportId)
     formData.append('reportDate', data.reportDate)
@@ -368,6 +405,54 @@ export default function EditExpensesForm({ agents, currentAgentId }: EditExpense
               <input type="hidden" {...register('reportDate')} />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Report Date (Disabled view for reference) */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold text-brand-dim">
+                    تاريخ التقرير
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      dir="ltr"
+                      disabled
+                      value={selectedDate}
+                      className="block w-full rounded-xl bg-white/[0.01] border border-white/[0.04] py-3.5 pl-4 pr-11 text-white/50 focus:outline-none transition-all duration-300 text-sm dir-ltr text-left cursor-not-allowed"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-white/20">
+                      <Calendar className="h-4.5 w-4.5" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Expenses and Transfers (Manual Input Field) */}
+                <div className="space-y-2">
+                  <label htmlFor="editTotalExpenses" className="block text-xs font-semibold text-brand-dim">
+                    إجمالي المصروفات والتحويلات (التوتال)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      id="editTotalExpenses"
+                      dir="ltr"
+                      step="0.01"
+                      placeholder="0.00"
+                      className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-3.5 pl-4 pr-11 text-white focus:border-brand-accent focus:ring-2 focus:ring-brand-glow/30 focus:outline-none transition-all duration-300 text-sm dir-ltr text-left font-bold"
+                      {...register('totalExpenses')}
+                      disabled={pending}
+                      autoComplete="off"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-brand-accent">
+                      <Calculator className="h-4.5 w-4.5" />
+                    </div>
+                  </div>
+                  {clientErrors.totalExpenses && (
+                    <p className="text-[11px] text-brand-error font-medium">{clientErrors.totalExpenses.message}</p>
+                  )}
+                  <p className="text-[10px] text-brand-accent/80 font-medium">
+                    * أدخل مجموع المصاريف والتحويلات المقترحة يدوياً للمطابقة.
+                  </p>
+                </div>
+
                 {/* Personal Expenses */}
                 <div className="space-y-2">
                   <label htmlFor="editPersonalExpenses" className="block text-xs font-semibold text-brand-dim">
@@ -468,6 +553,8 @@ export default function EditExpensesForm({ agents, currentAgentId }: EditExpense
                   )}
                 </div>
               </div>
+
+
 
               {/* Dynamic Transfers List */}
               <div className="border-t border-brand-border/60 pt-5 space-y-4">

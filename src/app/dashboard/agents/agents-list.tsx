@@ -14,9 +14,12 @@ import {
   Loader2,
   X,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 import { updateAgentAction, toggleAgentSuspensionAction } from '@/app/actions/agents'
+import { resetAgentPasswordAction } from '@/app/actions/auth-admin'
 
 export interface Agent {
   id: string
@@ -62,6 +65,8 @@ export default function AgentsList({ initialAgents, userRole }: AgentsListProps)
   const [editSys1, setEditSys1] = useState('')
   const [editSys2, setEditSys2] = useState('')
   const [editSys3, setEditSys3] = useState('')
+  const [editPassword, setEditPassword] = useState('')
+  const [showEditPassword, setShowEditPassword] = useState(false)
 
   // UI States
   const [isPending, setIsPending] = useState(false)
@@ -146,6 +151,8 @@ export default function AgentsList({ initialAgents, userRole }: AgentsListProps)
     setEditSys1(agent.agent_sheets?.sys1 || '')
     setEditSys2(agent.agent_sheets?.sys2 || '')
     setEditSys3(agent.agent_sheets?.sys3 || '')
+    setEditPassword('')
+    setShowEditPassword(false)
     setActionError('')
   }
 
@@ -157,13 +164,31 @@ export default function AgentsList({ initialAgents, userRole }: AgentsListProps)
     setActionError('')
 
     try {
-      const trimmedTeamId = editTeamId.trim() || null
+      const isAgent = editRole === 'agent'
+      const trimmedTeamId = isAgent ? (editTeamId.trim() || null) : null
       
       const sheetsObj: Record<string, string> = {}
-      if (editSys1.trim()) sheetsObj.sys1 = editSys1.trim()
-      if (editSys2.trim()) sheetsObj.sys2 = editSys2.trim()
-      if (editSys3.trim()) sheetsObj.sys3 = editSys3.trim()
+      if (isAgent) {
+        if (editSys1.trim()) sheetsObj.sys1 = editSys1.trim()
+        if (editSys2.trim()) sheetsObj.sys2 = editSys2.trim()
+        if (editSys3.trim()) sheetsObj.sys3 = editSys3.trim()
+      }
       const agentSheets = Object.keys(sheetsObj).length > 0 ? sheetsObj : null
+
+      // Call password reset if field is filled
+      if (editPassword.trim()) {
+        if (editPassword.trim().length < 6) {
+          setActionError('يجب أن تتكون كلمة المرور الجديدة من 6 أحرف على الأقل.')
+          setIsPending(false)
+          return
+        }
+        const passRes = await resetAgentPasswordAction(editingAgent.id, editPassword.trim())
+        if (!passRes.success) {
+          setActionError(passRes.error || 'فشل تحديث كلمة المرور.')
+          setIsPending(false)
+          return
+        }
+      }
 
       const res = await updateAgentAction(
         editingAgent.id,
@@ -182,7 +207,10 @@ export default function AgentsList({ initialAgents, userRole }: AgentsListProps)
               : a
           )
         )
-        triggerToast('تم تحديث بيانات الموظف بنجاح.', 'success')
+        const msg = editPassword.trim() 
+          ? 'تم تحديث بيانات الموظف وكلمة المرور بنجاح.'
+          : 'تم تحديث بيانات الموظف بنجاح.'
+        triggerToast(msg, 'success')
         setEditingAgent(null)
       } else {
         setActionError(res.error || 'حدث خطأ أثناء حفظ التعديلات.')
@@ -453,65 +481,97 @@ export default function AgentsList({ initialAgents, userRole }: AgentsListProps)
                 </select>
               </div>
 
-              {/* Team ID */}
+              {/* New Password (Optional) */}
               <div className="space-y-2">
-                <label className="block text-xs font-semibold text-brand-dim">رقم الفريق (Team ID)</label>
-                <input
-                  type="text"
-                  dir="ltr"
-                  placeholder="اتركه فارغاً إذا لم يكن ينتمي لفريق"
-                  value={editTeamId}
-                  onChange={(e) => setEditTeamId(e.target.value)}
-                  className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-3 px-4 text-white focus:border-brand-accent focus:ring-1 focus:ring-brand-glow/30 focus:outline-none transition-all duration-300 text-sm text-left font-mono placeholder:text-white/20 placeholder:text-right"
-                  disabled={isPending}
-                />
-              </div>
-
-              {/* Google Sheets Links */}
-              <div className="border-t border-brand-border/60 pt-4.5 space-y-3">
-                <h4 className="text-xs font-bold text-brand-accent text-right">روابط الشيتات (Google Sheets)</h4>
-                
-                <div className="space-y-3">
-                  {/* Sys 1 link */}
-                  <div className="space-y-1.5">
-                    <label className="block text-[10px] font-semibold text-brand-dim">رابط شيت Marketing Sys 1</label>
-                    <input
-                      type="url"
-                      placeholder="رابط شيت النظام الأول"
-                      value={editSys1}
-                      onChange={(e) => setEditSys1(e.target.value)}
-                      className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-2.5 px-3 text-white focus:border-brand-accent focus:outline-none transition-all duration-300 text-xs text-left dir-ltr"
-                      disabled={isPending}
-                    />
-                  </div>
-
-                  {/* Sys 2 link */}
-                  <div className="space-y-1.5">
-                    <label className="block text-[10px] font-semibold text-brand-dim">رابط شيت Marketing Sys 2</label>
-                    <input
-                      type="url"
-                      placeholder="رابط شيت النظام الثاني"
-                      value={editSys2}
-                      onChange={(e) => setEditSys2(e.target.value)}
-                      className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-2.5 px-3 text-white focus:border-brand-accent focus:outline-none transition-all duration-300 text-xs text-left dir-ltr"
-                      disabled={isPending}
-                    />
-                  </div>
-
-                  {/* Sys 3 link */}
-                  <div className="space-y-1.5">
-                    <label className="block text-[10px] font-semibold text-brand-dim">رابط شيت Marketing Sys 3</label>
-                    <input
-                      type="url"
-                      placeholder="رابط شيت النظام الثالث"
-                      value={editSys3}
-                      onChange={(e) => setEditSys3(e.target.value)}
-                      className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-2.5 px-3 text-white focus:border-brand-accent focus:outline-none transition-all duration-300 text-xs text-left dir-ltr"
-                      disabled={isPending}
-                    />
-                  </div>
+                <label className="block text-xs font-semibold text-brand-dim">كلمة مرور جديدة (اختياري)</label>
+                <div className="relative font-sans">
+                  <input
+                    type={showEditPassword ? 'text' : 'password'}
+                    placeholder="اتركه فارغاً للاحتفاظ بكلمة المرور الحالية"
+                    value={editPassword}
+                    onChange={(e) => setEditPassword(e.target.value)}
+                    className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-3 pl-11 pr-4 text-white focus:border-brand-accent focus:ring-1 focus:ring-brand-glow/30 focus:outline-none transition-all duration-300 text-sm text-left dir-ltr placeholder:text-right"
+                    disabled={isPending}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPassword(!showEditPassword)}
+                    className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-white/30 hover:text-white/60 transition-colors cursor-pointer"
+                    disabled={isPending}
+                  >
+                    {showEditPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                  </button>
                 </div>
+                <p className="text-[10px] text-brand-dim/80 text-right leading-relaxed select-none">
+                  اتركه فارغاً إذا كنت لا تريد تغيير كلمة المرور الحالية.
+                </p>
               </div>
+
+              {/* Team ID & Google Sheets Links (Agent Only) */}
+              {editRole === 'agent' && (
+                <>
+                  {/* Team ID */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-brand-dim">رقم الفريق (Team ID)</label>
+                    <input
+                      type="text"
+                      dir="ltr"
+                      placeholder="اتركه فارغاً إذا لم يكن ينتمي لفريق"
+                      value={editTeamId}
+                      onChange={(e) => setEditTeamId(e.target.value)}
+                      className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-3 px-4 text-white focus:border-brand-accent focus:ring-1 focus:ring-brand-glow/30 focus:outline-none transition-all duration-300 text-sm text-left font-mono placeholder:text-white/20 placeholder:text-right"
+                      disabled={isPending}
+                    />
+                  </div>
+
+                  {/* Google Sheets Links */}
+                  <div className="border-t border-brand-border/60 pt-4.5 space-y-3">
+                    <h4 className="text-xs font-bold text-brand-accent text-right">روابط الشيتات (Google Sheets)</h4>
+                    
+                    <div className="space-y-3">
+                      {/* Sys 1 link */}
+                      <div className="space-y-1.5">
+                        <label className="block text-[10px] font-semibold text-brand-dim">رابط شيت Marketing Sys 1</label>
+                        <input
+                          type="url"
+                          placeholder="رابط شيت النظام الأول"
+                          value={editSys1}
+                          onChange={(e) => setEditSys1(e.target.value)}
+                          className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-2.5 px-3 text-white focus:border-brand-accent focus:outline-none transition-all duration-300 text-xs text-left dir-ltr"
+                          disabled={isPending}
+                        />
+                      </div>
+
+                      {/* Sys 2 link */}
+                      <div className="space-y-1.5">
+                        <label className="block text-[10px] font-semibold text-brand-dim">رابط شيت Marketing Sys 2</label>
+                        <input
+                          type="url"
+                          placeholder="رابط شيت النظام الثاني"
+                          value={editSys2}
+                          onChange={(e) => setEditSys2(e.target.value)}
+                          className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-2.5 px-3 text-white focus:border-brand-accent focus:outline-none transition-all duration-300 text-xs text-left dir-ltr"
+                          disabled={isPending}
+                        />
+                      </div>
+
+                      {/* Sys 3 link */}
+                      <div className="space-y-1.5">
+                        <label className="block text-[10px] font-semibold text-brand-dim">رابط شيت Marketing Sys 3</label>
+                        <input
+                          type="url"
+                          placeholder="رابط شيت النظام الثالث"
+                          value={editSys3}
+                          onChange={(e) => setEditSys3(e.target.value)}
+                          className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-2.5 px-3 text-white focus:border-brand-accent focus:outline-none transition-all duration-300 text-xs text-left dir-ltr"
+                          disabled={isPending}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Action Buttons */}
               <div className="flex gap-3 pt-3">

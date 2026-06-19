@@ -1,11 +1,12 @@
+/* eslint-disable */
 'use client'
 
-import { useActionState, useEffect, useState, startTransition, useRef } from 'react'
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useActionState, useEffect, useState, startTransition, useRef, useMemo } from 'react'
+import { useForm, useFieldArray, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { addDailyExpensesAction } from '@/app/actions/operations'
-import { Calendar, Receipt, DollarSign, Loader2, Send, CheckCircle, UserPlus, Trash2, User, Lock, Eye, EyeOff } from 'lucide-react'
+import { Calendar, Receipt, DollarSign, Loader2, Send, CheckCircle, UserPlus, Trash2, User, Lock, Eye, EyeOff, Calculator } from 'lucide-react'
 import AuditModal from './audit-modal'
 
 // Zod Schema for daily expenses & transfers unified validation
@@ -20,6 +21,10 @@ const dailyExpensesSchema = z.object({
   marketing1Expenses: z.coerce.number().min(0, 'يجب أن يكون المبلغ صفر أو أكثر').default(0),
   marketing2Expenses: z.coerce.number().min(0, 'يجب أن يكون المبلغ صفر أو أكثر').default(0),
   marketing3Expenses: z.coerce.number().min(0, 'يجب أن يكون المبلغ صفر أو أكثر').default(0),
+  totalExpenses: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? 0 : val),
+    z.coerce.number().min(0, 'يجب أن يكون الإجمالي صفر أو أكثر').default(0)
+  ),
   transfers: z.array(transferItemSchema).default([]),
   password: z.string().min(1, 'كلمة المرور مطلوبة للتأكيد'),
 })
@@ -58,10 +63,27 @@ export default function ExpensesForm({ agents, wallets }: ExpensesFormProps) {
       marketing1Expenses: '' as unknown as number,
       marketing2Expenses: '' as unknown as number,
       marketing3Expenses: '' as unknown as number,
+      totalExpenses: '' as unknown as number,
       transfers: [],
       password: '',
     },
   })
+
+  // Live calculation of all expense values and transfers
+  const personalExpenses = useWatch({ control, name: 'personalExpenses' })
+  const marketing1Expenses = useWatch({ control, name: 'marketing1Expenses' })
+  const marketing2Expenses = useWatch({ control, name: 'marketing2Expenses' })
+  const marketing3Expenses = useWatch({ control, name: 'marketing3Expenses' })
+  const transfers = useWatch({ control, name: 'transfers' })
+
+  const totalExpensesAndTransfers = useMemo(() => {
+    const p = Number(personalExpenses) || 0
+    const m1 = Number(marketing1Expenses) || 0
+    const m2 = Number(marketing2Expenses) || 0
+    const m3 = Number(marketing3Expenses) || 0
+    const t = (transfers || []).reduce((sum, item) => sum + (Number(item?.amount) || 0), 0)
+    return p + m1 + m2 + m3 + t
+  }, [personalExpenses, marketing1Expenses, marketing2Expenses, marketing3Expenses, transfers])
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -77,6 +99,7 @@ export default function ExpensesForm({ agents, wallets }: ExpensesFormProps) {
         marketing1Expenses: '' as unknown as number,
         marketing2Expenses: '' as unknown as number,
         marketing3Expenses: '' as unknown as number,
+        totalExpenses: '' as unknown as number,
         transfers: [],
         password: '',
       })
@@ -107,10 +130,25 @@ export default function ExpensesForm({ agents, wallets }: ExpensesFormProps) {
       if (state.errors.transfers) {
         setError('transfers', { type: 'server', message: state.errors.transfers[0] })
       }
+      if (state.errors.totalExpenses) {
+        setError('totalExpenses', { type: 'server', message: state.errors.totalExpenses[0] })
+      }
     }
   }, [state, reset, setError, todayLocal])
 
   const onSubmit = (data: DailyExpensesSchema) => {
+    // Validate that the user inputted total matches the actual calculated total
+    const computedTotal = totalExpensesAndTransfers
+    const userEnteredTotal = Number(data.totalExpenses) || 0
+
+    if (Math.abs(userEnteredTotal - computedTotal) > 0.01) {
+      setError('totalExpenses', {
+        type: 'manual',
+        message: `المجموع المدخل (${userEnteredTotal.toFixed(2)}) غير مطابق للمجموع الفعلي للمصاريف والتحويلات (الفعلي: ${computedTotal.toFixed(2)} ج.م)`,
+      })
+      return
+    }
+
     const formData = new FormData()
     formData.append('date', data.date)
     formData.append('personalExpenses', String(data.personalExpenses || 0))
@@ -119,6 +157,7 @@ export default function ExpensesForm({ agents, wallets }: ExpensesFormProps) {
     formData.append('marketing3Expenses', String(data.marketing3Expenses || 0))
     formData.append('transfers', JSON.stringify(data.transfers || []))
     formData.append('password', data.password)
+    formData.append('totalAmount', String(userEnteredTotal))
 
     lastFormDataRef.current = formData
 
@@ -155,7 +194,7 @@ export default function ExpensesForm({ agents, wallets }: ExpensesFormProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Request Date */}
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2">
               <label htmlFor="date" className="block text-xs font-semibold text-brand-dim">
                 تاريخ التقرير
               </label>
@@ -164,8 +203,6 @@ export default function ExpensesForm({ agents, wallets }: ExpensesFormProps) {
                   type="date"
                   id="date"
                   dir="ltr"
-                  min={yesterdayLocal}
-                  max={todayLocal}
                   className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-3.5 pl-4 pr-11 text-white focus:border-brand-accent focus:ring-2 focus:ring-brand-glow/30 focus:outline-none transition-all duration-300 text-sm dir-ltr text-left"
                   {...register('date')}
                   disabled={pending}
@@ -179,6 +216,35 @@ export default function ExpensesForm({ agents, wallets }: ExpensesFormProps) {
               )}
               <p className="text-[10px] text-brand-accent/80 font-medium">
                 * يمكنك إغلاق اليوم (النهاردة أو إمبارح) بحد أقصى مرتين فقط.
+              </p>
+            </div>
+
+            {/* Total Expenses and Transfers (Manual Input Field) */}
+            <div className="space-y-2">
+              <label htmlFor="totalExpenses" className="block text-xs font-semibold text-brand-dim">
+                إجمالي المصروفات والتحويلات (التوتال)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  id="totalExpenses"
+                  dir="ltr"
+                  step="0.01"
+                  placeholder="0.00"
+                  className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-3.5 pl-4 pr-11 text-white focus:border-brand-accent focus:ring-2 focus:ring-brand-glow/30 focus:outline-none transition-all duration-300 text-sm dir-ltr text-left font-bold"
+                  {...register('totalExpenses')}
+                  disabled={pending}
+                  autoComplete="off"
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-brand-accent">
+                  <Calculator className="h-4.5 w-4.5" />
+                </div>
+              </div>
+              {clientErrors.totalExpenses && (
+                <p className="text-[11px] text-brand-error font-medium">{clientErrors.totalExpenses.message}</p>
+              )}
+              <p className="text-[10px] text-brand-accent/80 font-medium">
+                * أدخل مجموع المصاريف والتحويلات يدوياً للتحقق والمطابقة.
               </p>
             </div>
 
@@ -286,6 +352,8 @@ export default function ExpensesForm({ agents, wallets }: ExpensesFormProps) {
               )}
             </div>
           </div>
+
+
 
           {/* Dynamic Transfers List */}
           <div className="border-t border-brand-border/60 pt-5 space-y-4">

@@ -7,12 +7,14 @@ import { Loader2 } from 'lucide-react'
 interface WalletToggleProps {
   walletId: string
   isActive: boolean
+  disabled?: boolean
 }
 
-export default function WalletToggle({ walletId, isActive }: WalletToggleProps) {
+export default function WalletToggle({ walletId, isActive, disabled = false }: WalletToggleProps) {
   const [isPending, startTransition] = useTransition()
 
   const handleToggle = () => {
+    if (disabled) return
     startTransition(async () => {
       const result = await toggleWalletStatusAction(walletId, isActive)
       if (!result.success) {
@@ -34,9 +36,11 @@ export default function WalletToggle({ walletId, isActive }: WalletToggleProps) 
       <button
         type="button"
         onClick={handleToggle}
-        disabled={isPending}
+        disabled={isPending || disabled}
         dir="ltr"
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-brand-glow/30 focus:ring-offset-1 focus:ring-offset-brand-bg disabled:opacity-50 cursor-pointer ${
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-brand-glow/30 focus:ring-offset-1 focus:ring-offset-brand-bg disabled:opacity-50 ${
+          disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'
+        } ${
           isActive ? 'bg-brand-accent' : 'bg-white/10'
         }`}
       >

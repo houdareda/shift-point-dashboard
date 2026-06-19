@@ -21,7 +21,7 @@ export default async function AdminLayout({
   // Fetch profile to check role permissions
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, full_name')
+    .select('role, full_name, agent_sheets')
     .eq('id', user.id)
     .single()
 
@@ -37,6 +37,7 @@ export default async function AdminLayout({
     full_name: profile?.full_name || user.email || 'مستخدم جديد',
     role: userRole,
     email: user.email || '',
+    agent_sheets: profile?.agent_sheets || null,
   }
 
   return (

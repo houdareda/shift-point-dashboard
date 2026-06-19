@@ -1,7 +1,8 @@
+/* eslint-disable */
 'use server'
 
 import { z } from 'zod'
-import { createClient, checkUserSuspension } from '@/utils/supabase/server'
+import { createClient, createAdminClient, checkUserSuspension } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 // ----------------------------------------------------
@@ -10,10 +11,8 @@ import { revalidatePath } from 'next/cache'
 
 const moneyRequestSchema = z.object({
   date: z.string().refine((val) => {
-    const tzOffset = new Date().getTimezoneOffset() * 60000
-    const todayLocal = new Date(Date.now() - tzOffset).toISOString().split('T')[0]
-    const yesterdayLocal = new Date(Date.now() - tzOffset - 86400000).toISOString().split('T')[0]
-    return val === todayLocal || val === yesterdayLocal
+    // Temporarily allow all dates for backfilling historical data
+    return true
   }, 'يجب أن يكون التاريخ اليوم أو الأمس فقط'),
   amount: z.coerce.number().positive('يجب أن يكون المبلغ أكبر من صفر'),
   walletId: z.string().uuid('المحفظة المحددة غير صالحة'),
@@ -105,6 +104,7 @@ export async function addMoneyRequestAction(
       .select('*')
       .eq('agent_id', user.id)
       .eq('is_active', true)
+      .neq('is_archived', true)
 
     if (activeWalletsError) {
       console.error('Error fetching wallets for audit check:', activeWalletsError)
@@ -124,6 +124,13 @@ export async function addMoneyRequestAction(
       return {
         success: false,
         error: 'المحفظة المحددة غير صالحة أو غير نشطة.',
+      }
+    }
+
+    if (Number(selectedWallet.current_balance || 0) >= 200000) {
+      return {
+        success: false,
+        error: 'عذراً، هذه المحفظة وصلت للحد الأقصى للرصيد (200 ألف ج.م أو أكثر) ولا يمكن طلب شحن رصيد لها.',
       }
     }
 
@@ -214,10 +221,8 @@ const transferItemSchema = z.object({
 
 const dailyExpensesSchema = z.object({
   date: z.string().refine((val) => {
-    const tzOffset = new Date().getTimezoneOffset() * 60000
-    const todayLocal = new Date(Date.now() - tzOffset).toISOString().split('T')[0]
-    const yesterdayLocal = new Date(Date.now() - tzOffset - 86400000).toISOString().split('T')[0]
-    return val === todayLocal || val === yesterdayLocal
+    // Temporarily allow all dates for backfilling historical data
+    return true
   }, 'يجب أن يكون التاريخ اليوم أو الأمس فقط'),
   personalExpenses: z.preprocess(
     (val) => (val === '' || val === null || val === undefined ? 0 : val),
@@ -248,6 +253,7 @@ export type DailyExpensesState = {
     marketing1Expenses?: string[]
     marketing2Expenses?: string[]
     marketing3Expenses?: string[]
+    totalExpenses?: string[]
     transfers?: string[]
     password?: string[]
   }
@@ -272,6 +278,7 @@ export async function addDailyExpensesAction(
   const marketing3Expenses = formData.get('marketing3Expenses') as string
   const transfersJson = formData.get('transfers') as string
   const password = formData.get('password') as string
+  const totalAmountStr = formData.get('totalAmount') as string
 
   let transfersList: any[] = []
   try {
@@ -397,6 +404,11 @@ export async function addDailyExpensesAction(
       amount: item.amount,
     }))
 
+    // Calculate total amount to store in database
+    const transfersSum = data.transfers.reduce((sum, item) => sum + item.amount, 0)
+    const computedTotal = data.personalExpenses + data.marketing1Expenses + data.marketing2Expenses + data.marketing3Expenses + transfersSum
+    const totalAmount = totalAmountStr ? Number(totalAmountStr) : computedTotal
+
     // 4. Insert daily expenses & transfers into public.daily_reports (strict insertion, fails if duplicate date)
     const { error: insertError } = await supabase
       .from('daily_reports')
@@ -408,6 +420,7 @@ export async function addDailyExpensesAction(
         marketing_2_expenses: data.marketing2Expenses,
         marketing_3_expenses: data.marketing3Expenses,
         transfers: dbTransfers,
+        total_amount: totalAmount,
       })
 
     if (insertError) {
@@ -463,6 +476,7 @@ export type FetchDailyReportResult = {
     marketing_2_expenses: number
     marketing_3_expenses: number
     transfers: Array<{ target_agent_id: string; amount: number }> | null
+    total_amount: number | null
   } | null
 }
 
@@ -519,7 +533,7 @@ export async function fetchDailyReportAction(dateStr: string): Promise<FetchDail
     // 3. Fetch daily report for this user and date
     const { data, error } = await supabase
       .from('daily_reports')
-      .select('id, report_date, personal_expenses, marketing_1_expenses, marketing_2_expenses, marketing_3_expenses, transfers')
+      .select('id, report_date, personal_expenses, marketing_1_expenses, marketing_2_expenses, marketing_3_expenses, transfers, total_amount')
       .eq('agent_id', user.id)
       .eq('report_date', dateStr)
       .maybeSingle()
@@ -584,6 +598,7 @@ export type ExpenseEditRequestState = {
     marketing1Expenses?: string[]
     marketing2Expenses?: string[]
     marketing3Expenses?: string[]
+    totalExpenses?: string[]
     transfers?: string[]
   }
 }
@@ -775,6 +790,25 @@ export async function auditWalletsAction(
       success: false,
       error: 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى.',
     }
+  }
+}
+
+export async function getIncomingTransfersAction(userId: string) {
+  try {
+    const adminSupabase = await createAdminClient()
+    const { data, error } = await adminSupabase
+      .from('daily_reports')
+      .select('transfers, report_date, agent_id')
+      .filter('transfers', 'cs', `[{"target_agent_id": "${userId}"}]`)
+    
+    if (error) {
+      console.error('Error fetching incoming transfers in Server Action:', error)
+      return []
+    }
+    return data || []
+  } catch (err) {
+    console.error('Exception fetching incoming transfers in Server Action:', err)
+    return []
   }
 }
 

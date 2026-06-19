@@ -97,6 +97,15 @@ export async function approveExpenseEditRequestAction(requestId: string): Promis
       return { success: false, error: 'لم يتم العثور على طلب التعديل المعلق أو تم معالجته بالفعل.' }
     }
 
+    // Calculate the new total amount for the updated report
+    const newTransfersList = (request.new_transfers as Array<{ amount: number }> || [])
+    const newTransfersSum = newTransfersList.reduce((sum, item) => sum + (Number(item?.amount) || 0), 0)
+    const newTotalAmount = Number(request.new_personal_expenses || 0) +
+                           Number(request.new_marketing_1_expenses || 0) +
+                           Number(request.new_marketing_2_expenses || 0) +
+                           Number(request.new_marketing_3_expenses || 0) +
+                           newTransfersSum
+
     // 2. Update the target daily_reports record with the new values from the request
     const { error: updateReportError } = await supabase
       .from('daily_reports')
@@ -106,6 +115,7 @@ export async function approveExpenseEditRequestAction(requestId: string): Promis
         marketing_2_expenses: request.new_marketing_2_expenses,
         marketing_3_expenses: request.new_marketing_3_expenses,
         transfers: request.new_transfers,
+        total_amount: newTotalAmount,
       })
       .eq('id', request.report_id)
 

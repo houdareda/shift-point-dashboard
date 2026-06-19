@@ -1,0 +1,1510 @@
+import json
+import os
+import re
+
+log_path = r"C:\Users\Reda Tech\.gemini\antigravity-ide\brain\d228d0a1-fce4-4389-92e2-35acf6cf810e\.system_generated\logs\transcript.jsonl"
+target_path = r"c:\Users\Reda Tech\Desktop\shiftpoint dashboard\src\app\dashboard\cpl-calculator\cpl-calculator-client.tsx"
+
+# We want to extract the file lines as they were read in step 1 of this conversation.
+# The tool calls view_file outputted the entire file:
+# lines 1-800, lines 801-900, lines 900-1150, lines 1151-1301.
+
+# Let's read the transcript line by line.
+lines_dict = {}
+
+with open(log_path, 'r', encoding='utf-8') as f:
+    for line in f:
+        try:
+            data = json.loads(line)
+            # Check if this step indices a VIEW_FILE tool or output
+            if data.get('type') == 'VIEW_FILE' or 'view_file' in str(data):
+                content = data.get('content', '')
+                # If there are line numbers like: "1: 'use client'\n2: \n..."
+                # we can parse them.
+                for match in re.finditer(r"^(\d+):\s(.*)$", content, re.MULTILINE):
+                    line_num = int(match.group(1))
+                    line_content = match.group(2)
+                    lines_dict[line_num] = line_content
+        except Exception as e:
+            continue
+
+# Sort and check if we have all lines from 1 to 1301
+sorted_nums = sorted(lines_dict.keys())
+print(f"Extracted {len(sorted_nums)} lines. Min line: {min(sorted_nums) if sorted_nums else None}, Max line: {max(sorted_nums) if sorted_nums else None}")
+
+# If we have the lines, let's write them to a temp backup file first
+if len(sorted_nums) > 1200:
+    out_lines = []
+    for i in range(1, max(sorted_nums) + 1):
+        # Fallback to empty if a line is missing, but they should all be there
+        out_lines.append(lines_dict.get(i, ""))
+    
+    backup_path = target_path + ".backup"
+    with open(backup_path, 'w', encoding='utf-8') as out_f:
+        out_f.write("\n".join(out_lines))
+    print(f"Backup written to {backup_path}")
+    
+    # Overwrite the target path
+    with open(target_path, 'w', encoding='utf-8') as out_f:
+        out_f.write("\n".join(out_lines))
+    print("Target file restored successfully!")
+else:
+    print("Error: Could not extract enough lines from logs.")
+
+  } else {
+    console.log("Error: Could not extract enough lines from logs.");
+  }
+} catch (err) {
+  console.error("Execution error:", err);
+}
+
+  activeWallets: ActiveWallet[]
+  latestReport: CplReport | null
+}
+
+export default function CplCalculatorClient({
+  initialRep
+  - Select on Focus flow: **Verified**
+
+}: CplCalculatorClientProps) {
+}: CplCalculatorClientProps) {
+  const [activeTab, setActiveTab] = useState<'new-entry' | 'edit-report' | 'history'>('new-entry')
+  const [reports, setReports] = useState<CplReport[]>(initialReports as CplReport[])
+  const [filterDate, setFilterDate] = useState<string>('')
+  const [isPending, startSaveTransition] = useTransition()
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [editReportDate, setEditReportDate] = useState<string>('')
+
+  const filteredReports = useMemo(() => {
+    if (!filterDate) return reports
+    return reports.filter((r) => r.report_date === filterDate)
+  }, [reports, filterDate])
+
+  // --- Date setup ---
+  const tzOffset = new Date().getTimezoneOffset() * 60000
+  const todayLocal = new Date(Date.now() - tzOffset).toISOString().split('T')[0]
+  const yesterdayLocal = new Date(Date.now() - tzOffset - 86400000).toISOString().split('T')[0]
+  const [reportDate, setReportDate] = useState(todayLocal)
+
+  // --- Sticky Defaults / Smart Defaults Initialization ---
+  const savedDetails = latestReport?.wallets_details as any
+  const [campaignMoney, setCampaignMoney] = useState(
+    latestReport ? String(latestReport.campaign_money) : ''
+  )
+  const [sys2Amount, setSys2Amount] = useState(
+    latestReport?.sys2_amount !== undefined && latestReport?.sys2_amount !== null ? String(latestReport.sys2_amount) : ''
+  )
+  const [sys3Amount, setSys3Amount] = useState(
+    latestReport?.sys3_amount !== undefined &
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // Map active wallets and resolve initial amount values from sticky latestReport
+  const [walletAmounts, setWalletAmounts] = useState<Record<string, string>>(() => {
+    const initialAmounts: Record<string, string> = {}
+    activeWallets.forEach((w) => {
+      let savedAmount = ''
+      if (savedDetails) {
+        let savedWalletsList: any[] = []
+        if (Array.isArray(savedDetails)) {
+          savedWalletsList = savedDetails
+        } else if (Array.isArray(savedDetails.wallets)) {
+          savedWalletsList = savedDetails.wallets
+        }
+        const match = savedWalletsList.find((sw: any) => sw.phone === w.phone_number)
+        if (match) {
+          savedAmount = String(match.amount)
+        }
+      }
+      initialAmounts[w.phone_number] = savedAmount
+    })
+    return initialAmounts
+  })
+
+  // --- UI Toast & Message States ---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    const C10 = D10 > 0 ? (B10 / D10).toFixed(2) : 'Add count First'
+    const C11 = D11 > 0 ? (B11 / D11).toFixed(2) : 'Add count First'
+
+    return {
+      B3,
+      B13,
+      B9,
+      B4,
+      B14,
+      B12,
+      C9,
+      C10,
+      C11,
+      D9,
+      D10,
+      D11
+    }
+  }, [
+    totalCash,
+    personalExpenses,
+    recipientMoney,
+    campaignMoney,
+    sys2Amount,
+    sys3Amount,
+    sys1Count,
+    sys2Count,
+    sys3Count,
+    walletAmounts,
+    activeWallets
+  ])
+
+  const handleWalletAmountChange = (phone: string, val: string) => {
+    setWalletAmounts((prev) => ({
+      ...prev,
+      [phone]: val
+    activeWallets
+  ])
+
+  const handleWalletAmountChange = (phone: string, val: string) => {
+    setWalletAmounts((prev) => ({
+      ...prev,
+      [phone]: val
+    }))
+      ...prev,
+      [phone]: val
+    }))
+  }
+
+  // --- Save Report ---
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault()
+    setFormError('')
+
+    if (!reportDate) {
+      setFormError('يرجى اختيار تاريخ التقرير.')
+      return
+    }
+
+    if (reportDate !== todayLocal && reportDate !== yesterdayLocal) {
+      setFormError('مسموح فقط باختيار تاريخ اليوم أو الأمس.')
+      return
+    }
+
+    setShowConfirmModal(true)
+  }
+
+  const executeSave = async () => {
+    setShowConfirmModal(false)
+    setFormError('')
+
+    // Format wallets as array of phone + amount
+    const walletsList = activeWallets.map((w) => ({
+      phone: w.phone_number,
+      amount: parseFloat(walletAmounts[w.phone_number]) || 0
+    }))
+
+    // Pack both wallets and product counts into JSON to support smart defaults reloading
+    const walletsDetailsJson = {
+      wallets: walletsList,
+      sys1_count: math.D9,
+      sys2_count: math.D10,
+      sys3_count: math.D11
+    }
+
+    const formData = new FormData()
+    formData.append('date', reportDate)
+    formData.append('totalCash', totalCash || '0')
+    formData.append('personalExpenses', personalExpenses || '0')
+    formData.append('recipientMoney', recipientMoney || '0')
+    formData.append('campaignM
+    formData.append('sys2Amount', sys2Amount || '0')
+    formData.append('sys3Amount', sys3Amount || '0')
+    formData.append('sys1Count', String(math.D9))
+    formData.append('sys2Count', String(math.D10))
+    formData.append('sys3Count', String(math.D11))
+ 
+              sys1_amount: math.B9,
+              sys2_amount: parseFloat(sys2Amount) || 0,
+              sys3_amount: parseFloat(sys3Amount) || 0,
+              sys1_count: math.D9,
+              id: Math.random().toString(),
+              user_id: '',
+              report_date: reportDate,
+              total_cash: parseFloat(totalCash) || 0,
+              personal_expenses: parseFloat(personalExpenses) || 0,
+              recipient_money: parseFloat(recipientMoney) || 0,
+              campaign_money: parseFloat(campaignMoney) || 0,
+              sys1_amount: math.B9,
+              sys2_amount: parseFloat(sys2Amount) || 0,
+              sys3_amount: parseFloat(sys3Amount) || 0,
+              sys1_count: math.D9,
+              sys2_count: math.D10,
+              sys3_count: math.D11,
+              sys1_cpl: math.C9 === 'Add count First' ? 0 : parseFloat(math.C9),
+              sys2_cpl: math.C10 === 'Add count First' ? 0 : parseFloat(math.C10),
+              sys3_cpl: math.C11 === 'Add count First' ? 0 : parseFloat(math.C11),
+              total_leads: math.B12,
+              total_leads: math.B12,
+              wallets_details: walletsDetailsJson,
+              calc_total_expenses: math.B4,
+              calc_total_wallets: math.B13,
+              calc_remaining_cash: math.B14,
+              created_at: new Date().toISOString()
+            }
+              sys2_cpl: math.C10 === 'Add count First' ? 0 : parseFloat(math.C10),
+              sys3_cpl: math.C11 === 'Add count First' ? 0 : parseFloat(math.C11),
+              total_leads: math.B12,
+              wallets_details: walletsDetailsJson,
+              calc_total_expenses: math.B4,
+              calc_total_wallets: math.B13,
+              calc_remaining_cash: math.B14,
+              created_at: new Date().toISOString()
+            }
+            const filtered = prev.filter((r) => r.report_date !== reportDate)
+            return [newReportLocal, ...filtered].sort(
+              (a, b) => new Date(b.report_date).getTime() - new Date(a.report_date).getTime()
+            )
+          })
+
+          // Partial Form Reset on Success (keeps walletAmounts intact)
+          setTotalCash('')
+          setPersonalExpenses('')
+          setRecipientMoney('')
+          setCampaignMoney('')
+          setSys2Amount('')
+          setSys3Amount('')
+          setSys1Count('')
+          setSys2Count('')
+          setSys3Count('')
+
+          setActiveTab('history')
+        } else {
+          setFormError(res.error || 'فشل الحفظ، يرجى مراجعة المدخلات.')
+          triggerToast(res.error || 'حدث خطأ أثناء الحفظ.', 'error')
+        }
+      } catch (err) {
+        console.error(err)
+        setFormError('حدث خطأ غير متوقع أثناء معالجة الطلب.')
+        triggerToast('حدث خطأ غير متوقع.', 'error')
+      }
+    })
+  }
+
+  const toggleRowExpansion = (id: string) => {
+    setExpandedRowId((prev) => (prev === id ? null : id))
+  }
+      </div>
+
+      {/* Tabs Menu */}
+      <div className="flex justify-start border-b border-brand-border/40 gap-1.5 p-1 bg-white/[0.02] border border-white/[0.04] rounded-2xl w-fit">
+        <button
+          onClick={() => setActiveTab('calculator')}
+          className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer ${
+            activeTab === 'calculator'
+              ? 'text-white bg-gradient-to-r from-brand-accent/20 to-brand-accent-dark/5 border border-brand-accent/20 shadow-[0_0_15px_rgba(139,92,246,0.15)]'
+        setFormError('لا يوجد تقرير مسجل في هذا التاريخ لتعديله.')
+        return
+      }
+    }
+
+    setShowConfirmModal(true)
+  }
+
+  const executeSave = async () => {
+    setShowConfirmModal(false)
+    setFormError('')
+
+    const activeDate = activeTab === 'new-entry' ? reportDate : editReportDate
+
+    // Format wallets as array of phone + amount
+    const walletsList = activeWallets.map((w) => ({
+      phone: w.phone_number,
+      amount: parseFloat(walletAmounts[w.phone_number]) || 0
+    }))
+
+    // Pack both wallets and product counts into JSON to support smart defaults reloading
+    const walletsDetailsJson = {
+      wallets: walletsList,
+      sys1_count: math.D9,
+      sys2_count: math.D10,
+      sys3_count: math.D11
+    }
+
+    const formData = new FormData()
+    formData.append('date', activeDate)
+    formData.append('totalCash', totalCash || '0')
+    formData.append('personalExpenses', personalExpenses || '0')
+    formData.append('recipientMoney', recipientMoney || '0')
+    formData.append('campaignMoney', campaignMoney || '0')
+    formData.append('sys2Amount', sys2Amount || '0')
+    formData.append('sys3Amount', sys3Amount || '0')
+    formData.append('sys1Count', String(math.D9))
+    formData.append('sys2Count', String(math.D10))
+    formData.append('sys3Count', String(math.D11))
+<truncated 1012 bytes>
+              {formError}
+            </div>
+          )}
+
+          {/* Sticky defaults loaded notice */}
+          {latestReport && (
+            <div className="flex items-center gap-2.5 p-3 px-4 rounded-2xl bg-brand-accent/5 border border-brand-accent/10 text-brand-accent text-xs font-semibold w-fit">
+              <ShieldCheck className="h-4.5 w-4.5" />
+              <span>تم ملء الحقول تلقائياً ببيانات آخر تقرير محفوظ ({latestReport.report_date}) لتوفير الوقت.</span>
+            </div>
+          )}
+
+          {/* Spreadsheet-like Grid container */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            {/* Left Column: Financials & Wallet details (7 Cols) */}
+          setReports((prev) => {
+            const newReportLocal: CplReport = {
+              id: Math.random().toString(),
+              user_id: '',
+              report_date: activeDate,
+              total_cash: parseFloat(totalCash) || 0,
+              personal_expenses: parseFloat(personalExpenses) || 0,
+              recipient_money: parseFloat(recipientMoney) || 0,
+              campaign_money: parseFloat(campaignMoney) || 0,
+              sys1_amount: math.B9,
+              sys2_amount: parseFloat(sys2Amount) || 0,
+              sys3_amount: parseFloat(sys3Amount) || 0,
+              sys1_count: math.D9,
+              sys2_count: math.D10,
+              sys3_count: math.D11,
+              sys1_cpl: math.C9 === 'Add count First' ? 0 : parseFloat(math.C9),
+              sys2_cpl: math.C10 === 'Add count First' ? 0 : parseFloat(math.C10),
+              sys3_cpl: math.C11 === 'Add count First' ? 0 : parseFloat(math.C11),
+              total_leads: math.B12,
+              wallets_details: walletsDetailsJson,
+              calc_total_expenses: math.B4,
+              calc_total_wallets: math.B13,
+              calc_remaining_cash: math.B14,
+              created_at: new Date().toISOString()
+            }
+            const filtered = prev.filter((r) => r.report_date !== activeDate)
+            return [newReportLocal, ...filtered].sort(
+              (a, b) => new Date(b.report_date).getTime() - new Date(a.report_date).getTime()
+            )
+          })
+
+          // Reset inputs if it was a New Entry save
+          if (activeTab === 'new-entry') {
+            setTotalCash('')
+            setPersonalExpenses('')
+            setRecipientMoney('')
+            setCampaignMoney('')
+            setSys2Amount('')
+            setSys3Amount('')
+            setSys1Count('')
+            setSys2Count('')
+            setSys3Count('')
+          }
+
+          setActiveTab('history')
+        } else {
+          setFormError(res.error || 'فشل الحفظ، يرجى مراجعة المدخلات.')
+          triggerToast(res.error || 'حدث خطأ أثناء الحفظ.', 'error')
+        }
+      } catch (err) {
+        console.error(err)
+        setFormError('حدث خطأ غير متوقع أثناء معالجة الطلب.')
+        triggerToast('حدث خطأ غير متوقع.', 'error')
+      }
+    })
+  }
+
+  const toggleRowExpansion = (id: string) => {
+    setExpandedRowId((prev) => (prev === id ? null : id))
+  }
+
+  return (
+    <div className="space-y-8 max-w-7xl mx-auto relative z-10 animate-fade-in pb-12">
+      {/* Toast Notification */}
+      {toast.show && (
+        <div
+          className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3.5 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] flex items-center gap-3 text-sm font-bold border animate-fade-in transition-all duration-300 ${
+            toast.type === 'success'
+              ? 'bg-[#10b981] text-white border-emerald-400/20 shadow-[0_8px_32px_rgba(16,185,129,0.
+                          <Coins className="h-4 w-4" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* B6: Recipient Money */}
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-bold text-brand-dim">تحويلات الزملاء</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={recipientMoney === '0' ? '' : recipientMoney}
+                          onChange={(e) => setRecipientMoney(e.target.value)}
+                          className="block w-full rounded-xl bg-white/[0.02] border border-white/[0.08] py-2.5 pl-3 pr-9 text-white placeholder:text-white/20 text-left dir-ltr focus:border-brand-accent focus:outline-none transition-all text-xs font-mono"
+                        />
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-white/30">
+                          <DollarSign className="h-4 w-4" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Row 2: B3 (Calculated Cash After Transfers) */}
+      {/* Tabs Menu */}
+      <div className="flex justify-start border-b border-brand-border/40 gap-1.5 p-1 bg-white/[0.02] border border-white/[0.04] rounded-2xl w-fit">
+        <button
+          onClick={() => setActiveTab('calculator')}
+          className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer ${
+            activeTab === 'calculator'
+              ? 'text-white bg-gradient-to-r from-brand-accent/20 to-brand-accent-dark/5 border border-brand-accent/20 shadow-[0_0_15px_rgba(139,92,246,0.15)]'
+              : 'text-brand-dim hover:text-white hover:bg-white/[0.02] border border-transparent'
+          }`}
+        >
+          <Calculator className="h-4.5 w-4.5" />
+          <span>حاسبة الـ CPL والكاش</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('history')}
+        triggerToast('حدث خطأ غير متوقع.', 'error')
+      }
+    })
+  }
+
+  const toggleRowExpansion = (id: string) => {
+    setExpandedRowId((prev) => (prev === id ? null : id))
+  }
+
+  return (
+    <div className="space-y-8 max-w-7xl mx-auto relative z-10 animate-fade-in pb-12">
+      {/* Toast Notification */}
+      {toast.show && (
+        <div
+          className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3.5 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] flex items-center gap-3 text-sm font-bold border animate-fade-in transition-all duration-300 ${
+            toast.type === 'success'
+              ? 'bg-[#10b981] text-white border-emerald-400/20 shadow-[0_8px_32px_rgba(16,185,129,0.3)]'
+              : 'bg-brand-error text-white border-red-500/20 shadow-[0_8px_32px_rgba(239,68,68,0.3)]'
+          }`}
+        >
+          {toast.type === 'success' ? (
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-white" />
+          ) : (
+            <AlertCircle className="h-5 w-5 shrink-0 text-white" />
+          )}
+          <span>{toast.message}</span>
+        </div>
+      )}
+
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-brand-border text-right">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center justify-start gap-2.5">
+            <Calculator className="h-7 w-7 text-brand-accent animate-pulse" />
+            <span>حسابات الـ CPL وإغلاق الكاش اليومي</span>
+          </h1>
+          <p className="mt-2 text-sm text-brand-dim leading-relaxed">
+            مرحباً {profileName}. أداة الإغلاق المالي اليومي وحساب الـ CPL المباشر بنسق شيت الإكسيل المتكامل.
+          </p>
+        </div>
+      </div>
+
+      {/* Tabs Menu */}
+      <div className="flex justify-start border-b border-brand-border/40 gap-1.5 p-1 bg-white/[0.02] border border-white/[0.04] rounded-2xl w-fit">
+        <button
+          type="button"
+          onClick={() => setActiveTab('new-entry')}
+          className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer ${
+            activeTab === 'new-entry'
+              ? 'text-white bg-gradient-to-r from-brand-accent/20 to-brand-accent-dark/5 border border-brand-accent/20 shadow-[0_0_15px_rgba(139,92,246,0.15)]'
+              : 'text-brand-dim hover:text-white hover:bg-white/[0.02] border border-transparent'
+          }`}
+        >
+          <Calculator className="h-4.5 w-4.5" />
+          <span>إدخال جديد</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('edit-report')}
+          className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer ${
+            activeTab === 'edit-report'
+          {activeTab === 'new-entry' && latestReport && (
+            <div className="flex items-center gap-2.5 p-3 px-4 rounded-2xl bg-brand-accent/5 border border-brand-accent/10 text-brand-accent text-xs font-semibold w-fit">
+              <ShieldCheck className="h-4.5 w-4.5" />
+              <span>تم ملء الحقول تلقائياً ببيانات آخر تقرير محفوظ ({latestReport.report_date}) لتوفير الوقت.</span>
+            </div>
+          )}
+
+          {/* Render layout grid only if in New Entry, OR in Edit Mode with a loaded report matching chosen date */}
+          {(activeTab === 'new-entry' || (activeTab === 'edit-report' && editReportDate && reports.some(r => r.report_date === editReportDate))) ? (
+
+          {/* Spreadsheet-like Grid container */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            {/* Left Column: Financials & Wallet details (7 Cols) */}
+            <div className="lg:col-span-7 space-y-6">
+              
+              {/* Financials & Wallets Box */}
+              <div className="rounded-[24px] bg-brand-card border border-brand-border p-6 md:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative">
+                <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/[0.04]">
+                  <h3 className="text-lg font-bold text-white">1. المالية العامة وحركة الكاش</h3>
+                  <div className="flex items-center gap-2 text-brand-dim">
+                    <Calendar className="h-4.5 w-4.5 text-brand-accent" />
+                    <input
+                      type="date"
+                      value={reportDate}
+                      min={yesterdayLocal}
+                      max={todayLocal}
+                      onChange={(e) => setReportDate(e.target.value)}
+                      className="bg-brand-bg border border-white/[0.08] rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-brand-accent transition-colors font-mono"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-5">
+                  {/* Row 1: B2, B5, B6 */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* B2: Total Cash */}
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-bold text-brand-dim">إجمالي الكاش المستلم</label>
+                          )}
+                      {/* Summary Row */}
+                      <tr className="bg-white/[0.01] border-t border-brand-border/60">
+                        <td className="py-3.5 font-sans font-extrabold pr-3 text-right">إجمالي عدد اللييدز</td>
+                        <td className="py-3.5 text-right text-brand-dim font-sans text-[10px] pl-2">—</td>
+                        <td className="py-3.5 pl-2 text-left font-extrabold text-white font-mono text-sm pr-2">
+                          {math.B12}
+                        </td>
+                        <td className="py-3.5 text-left text-brand-dim font-sans text-[10px]">—</td>
+                      </tr>
+
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+
+              {/* Total Summary Panel */}
+              <div className="rounded-[24px] bg-brand-card border border-brand-border p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] space-y-4">
+                <h3 className="text-base font-extrabold text-white pb-2 border-b border-white/[0.04]">4. التلخيص الما
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    <span className="text-[9px] text-brand-dim/40 font-mono">B2 - B4 - B7</span>
+                  </div>
+                  <span className="font-extrabold font-mono text-brand-accent text-base">
+                    {math.B14.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
+                  </span>
+                </div>
+              </div>
+
+              {/* Big Save Button */}
+              <div>
+
+            {/* Right Column: Active Wallets Inputs (5 Cols) */}
+            <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+              
+              {/* Dynamic Wallets listing - Taller and takes the side alone */}
+              <div className="rounded-[24px] bg-brand-card border border-brand-border p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative flex flex-col justify-between min-h-[500px]">
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-2 pb-3 border-b border-white/[0.04]">3. محافظ الكاش النشطة</h3>
+                  <p className="text-xs text-brand-dim mb-4 leading-relaxed">
+                    أرصدة محافظك المسجلة في النظام. أدخل المبلغ المتوفر في كل محفظة اليوم لإتمام عملية الإغلاق المالي.
+                  </p>
+
+                  {activeWallets.length === 0 ? (
+                    <div className="text-center py-8 text-brand-dim/50 border border-dashed border-white/[0.05] rounded-2xl">
+                      لا توجد محافظ نشطة مسجلة لك حالياً في لوحة التحكم.
+                    </div>
+                  ) : (
+                    <div className="space-y-4 max-h-[550px] overflow-y-auto pr-1">
+                      {activeWallets.map((wallet) => (
+                        <div key={wallet.id} className="flex items-center justify-between gap-4 py-1.5 px-3.5 rounded-xl bg-white/[0.01] border border-white/[0.03] hover:border-white/[0.06] transition-all duration-300">
+                  </p>
+
+                  {activeWallets.length === 0 ? (
+                    <div className="text-center py-8 text-brand-dim/50 border border-dashed border-white/[0.05] rounded-2xl">
+                      لا توجد محافظ نشطة مسجلة لك حالياً في لوحة التحكم.
+                    </div>
+                  ) : (
+                    <div className="space-y-4 max-h-[550px] overflow-y-auto pr-1">
+                      {activeWallets.map((wallet) => (
+                        <div key={wallet.id} className="flex items-center justify-between gap-4 py-1.5 px-3.5 rounded-xl bg-white/[0.01] border border-white/[0.03] hover:border-white/[0.06] transition-all duration-300">
+                          <div className="flex items-center gap-2 text-right">
+                            <Smartphone className="h-4 w-4 text-brand-accent" />
+                            <span className="text-sm font-bold text-white font-mono">{wallet.phone_number}</span>
+                          </div>
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={walletAmounts[wallet.phone_number] === '0' ? '' : walletAmounts[wallet.phone_number] || ''}
+                            onChange={(e) => handleWalletAmountChange(wallet.phone_number, e.target.value)}
+                            className="w-32 bg-white/[0.02] border border-white/[0.08] rounded-xl py-2 px-3 text-xs text-white text-left focus:outline-none focus:border-brand-accent transition-colors font-mono"
+                            required
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Campaign and Total Wallets calculation row */}
+                <div className="mt-5 pt-4 border-t border-white/[0.04] space-y-4.5">
+                  {/* Campaign Amount Input (B7) */}
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-bold text-brand-dim">مصاريف الحملة الإعلانية:</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={campaignMoney === '0' ? '' : campaignMoney}
+                      onChange={(e) => setCampaignMoney(e.target.value)}
+                      className="w-32 bg-white/[0.02] border border-white/[0.08] rounded-xl py-2 px-3 text-xs text-white text-left focus:outline-none focus:border-brand-accent transition-colors font-mono"
+                لا توجد تقارير سابقة محفوظة حتى الآن في سجل حسابك.
+              </div>
+            ) : (
+              <>
+                {filteredReports.length === 0 ? (
+                  <div className="text-center py-12 text-brand-dim/60 space-y-3">
+                    <p>لا توجد تقارير مطابقة للتاريخ المحدد ({filterDate}).</p>
+                    <button
+                      type="button"
+                      onClick={() => setFilterDate('')}
+                      className="px-4 py-2 rounded-xl bg-brand-accent/20 hover:bg-brand-accent/30 text-xs text-brand-accent font-bold transition-all cursor-pointer border border-brand-accent/30"
+                    >
+                      عرض جميع التقارير
+                    </button>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+            
+            <div className="flex items-center justify-start md:justify-end gap-2 shrink-0 self-start md:self-center">
+              {filterDate && (
+                <button
+                  type="button"
+                  onClick={() => setFilterDate('')}
+                  className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-white/80 hover:text-white transition-all cursor-pointer border border-white/[0.05]"
+                        <td className="py-3.5 font-sans font-bold">Marketing Sys 3</td>
+                        <td className="py-3.5 pl-2">
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={sys3Amount}
+                            onChange={(e) => setSys3Amount(e.target.value)}
+                            onFocus={(e) => e.target.select()}
+                            className="w-32 bg-white/[0.02] border border-white/[0.08] rounded-lg py-1 px-2 text-xs text-white text-left focus:outline-none focus:border-brand-accent transition-colors font-mono"
+                          />
+                        </td>
+                        <td className="py-3.5 pl-2">
+                          <input
+                            type="number"
+                            placeholder="0"
+                            value={sys3Count}
+                            onChange={(e) => setSys3Count(e.target.value)}
+                            onFocus={(e) => e.target.select()}
+                            className="w-24 bg-white/[0.02] border border-white/[0.08] rounded-lg py-1 px-2 text-xs text-white text-left focus:outline-none focus:border-brand-accent transition-colors font-mono"
+                          />
+                        </td>
+                        <td className="py-3.5 text-left font-sans font-bold text-white">
+                          {math.C11 === 'Add count First' ? (
+                            <span className="text-[10px] text-brand-dim/40 font-normal italic">أدخل العدد أولاً</span>
+                          ) : (
+                            <span>{Number(math.C11).toLocaleString('en-US')} ج.م</span>
+                          )}
+                        </td>
+                      </tr>
+
+                      {/* Summary Row */}
+                      <tr className="bg-white/[0.01] border-t border-brand-border/60">
+                        <td className="py-3.5 font-sans font-extrabold pr-3 text-right">إجمالي عدد اللييدز</td>
+                        <td className="py-3.5 text-right text-brand-dim font-sans text-[10px] pl-2">—</td>
+                        <td className="py-3.5 pl-2 text-right">
+                          <div className="w-24 text-left font-extrabold text-white font-mono text-sm inline-block px-2">
+                            {math.B12}
+                          </div>
+                        </td>
+                        <td className="py-3.5 text-left text-brand-dim font-sans text-[10px]">—</td>
+                      </tr>
+
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+
+              {/* Total Summary Panel */}
+              <div className="rounded-[24px] bg-brand-card border border-brand-border p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] space-y-4">
+                <h3 className="text-base font-extrabold text-white pb-2 border-b border-white/[0.04]">4. التلخيص المالي النهائي</h3>
+           
+                {/* Total Expenses (B4) */}
+                <div className="flex justify-between items-center text-xs pb-1">
+                  <div>
+                    <span className="block font-bold text-brand-dim">إجمالي المصروفات</span>
+                  </div>
+                  <span className="font-bold font-mono text-white text-sm">
+                    {math.B4.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
+                  </span>
+                </div>
+
+                {/* Remaining Cash (B14) */}
+                <div className="flex justify-between items-center text-xs pt-3 border-t border-white/[0.04]">
+                  <div>
+                    <span className="block font-bold text-white">الكاش النهائي المتبقي</span>
+                  </div>
+                  <span className="font-extrabold font-mono text-brand-accent text-base">
+                    {math.B14.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
+                  </span>
+                </div>
+              </div>
+
+              {/* Big Save Button */}
+              <div>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="w-full flex justify-center items-center gap-2 py-4 px-4 border border-transparent rounded-[20px] text-base font-bold text-white bg-gradient-to-r from-brand-accent to-brand-accent-dark hover:from-brand-accent-dark hover:to-brand-accent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-accent shadow-[0_4px_20px_rgba(139,92,246,0.35)] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 cursor-pointer"
+                >
+                  {isPending ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>جاري حفظ البيانات للتقرير...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-5 w-5" />
+                      <span>حفظ البيانات</span>
+                    </>
+
+                {/* Campaign and Total Wallets calculation row */}
+                <div className="mt-5 pt-4 border-t border-white/[0.04] space-y-4.5">
+                  {/* Campaign Amount Input (B7) */}
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-bold text-brand-dim">مصاريف الحملة الإعلانية:</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={campaignMoney}
+                      onChange={(e) => setCampaignMoney(e.target.value)}
+                      onFocus={(e) => e.target.select()}
+
+            {/* Right Column: Active Wallets Inputs (5 Cols) */}
+            <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+              
+              {/* Dynamic Wallets listing - Taller and takes the side alone */}
+              <div className="rounded-[24px] bg-brand-card border border-brand-border p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative flex flex-col justify-between min-h-[500px]">
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-2 pb-3 border-b border-white/[0.04]">3. محافظ الكاش النشطة</h3>
+                  <p className="text-xs text-brand-dim mb-4 leading-relaxed">
+                    أرصدة محافظك المسجلة في النظام. أدخل المبلغ المتوفر في كل محفظة اليوم لإتمام عملية الإغلاق المالي.
+                  </p>
+
+                  {activeWallets.length === 0 ? (
+                    <div className="text-center py-8 text-brand-dim/50 border border-dashed border-white/[0.05] rounded-2xl">
+                      لا توجد محافظ نشطة مسجلة لك حالياً في لوحة التحكم.
+                    </div>
+                  ) : (
+                    <div className="space-y-4 max-h-[550px] overflow-y-auto pr-1">
+                      {activeWallets.map((wallet) => (
+                        <div key={wallet.id} className="flex items-center justify-between gap-4 py-1.5 px-3.5 rounded-xl bg-white/[0.01] border border-white/[0.03] hover:border-white/[0.06] transition-all duration-300">
+                          <div className="flex items-center gap-2 text-right">
+                            <Smartphone className="h-4 w-4 text-brand-accent" />
+                            <span className="text-sm font-bold text-white font-mono">{wallet.phone_number}</span>
+                          </div>
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={walletAmounts[wallet.phone_number] || ''}
+                            onChange={(e) => handleWalletAmountChange(wallet.phone_number, e.target.value)}
+                            onFocus={(e) => e.target.select()}
+                            className="w-32 bg-white/[0.02] border border-white/[0.08] rounded-xl py-2 px-3 text-xs text-white text-left focus:outline-none focus:border-brand-accent transition-colors font-mono"
+                            required
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Campaign and Total Wallets calculation row */}
+                <div className="mt-5 pt-4 border-t border-white/[0.04] space-y-4.5">
+                  {/* Campaign Amount Input (B7) */}
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-bold text-brand-dim">مصاريف الحملة الإ
+                </button>
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={campaignMoney}
+                      onChange={(e) => setCampaignMoney(e.target.value)}
+                      onFocus={(e) => e.target.select()}
+                      className="w-32 bg-white/[0.02] border border-white/[0.08] rounded-xl py-2 px-3 text-xs text-white text-left focus:outline-none focus:border-brand-accent transition-colors font-mono"
+                    />
+                  </div>
+
+                  {/* Total Wallets (B13) - Green glow bg */}
+                  <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.05)] flex items-center justify-between text-xs">
+                    <div className="text-right">
+                      <span className="block font-bold text-emerald-400">إجمالي رصيد المحافظ النشطة</span>
+                    </div>
+                    <span className="text-sm font-bold font-mono text-emerald-400">
+                      {math.B13.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </form>
+      )}
+
+      {/* Tab 2: Get Data / History */}
+      {activeTab === 'history' && (
+        <div className="rounded-[24px] bg-brand-card border border-brand-border p-6 md:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative">
+          <div className="absolute -top-[100px] -right-[100px] w-[200px] h-[200px] bg-brand-accent/5 rounded-full blur-[50px] pointer-events-none" />
+
+          {/* Header & Date Filter */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-white/[0.04]">
+            <div>
+              <h3 className="text-lg font-bold text-white mb-2 text-right">سجل التقارير اليومية لـ CPL والكاش</h3>
+              <p className="text-xs text-brand-dim text-right leading-relaxed">
+                يعرض الجدول جميع التقارير السابقة مرتبة بالتاريخ الأحدث أولاً. اضغط على أي صف لعرض تفاصيل المحافظ وباقي المعادلات المجمعة.
+              </p>
+            </div>
+            
+            <div className="flex items-center justify-start md:justify-end gap-2 shrink-0 self-start md:self-center">
+              {filterDate && (
+                <button
+                  type="button"
+                  onClick={() => setFilterDate('')}
+                  className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-white/80 hover:text-white transition-all cursor-pointer border border-white/[0.05]"
+                >
+                  مسح التصفية
+                </button>
+              )}
+              <div className="relative flex items-center">
+                <Calendar className="absolute right-3 h-4.5 w-4.5 text-brand-accent pointer-events-none" />
+                <input
+                  type="date"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  className="bg-brand-bg border border-white/[0.08] rounded-xl pl-3 pr-9 py-2 text-xs text-white focus:outline-none focus:border-brand-accent transition-colors font-mono cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+
+            {reports.length === 0 ? (
+              <div className="text-center py-12 text-brand-dim/60">
+                لا توجد تقارير سابقة محفوظة حتى الآن في سجل حسابك.
+              </div>
+            ) : (
+              <>
+                {filteredReports.length === 0 ? (
+                  <div className="text-center py-12 text-brand-dim/60 space-y-3">
+                    <p>لا توجد تقارير مطابقة للتاريخ المحدد ({filterDate}).</p>
+                    <button
+                      type="button"
+                      onClick={() => setFilterDate('')}
+                      className="px-4 py-2 rounded-xl bg-brand-accent/20 hover:bg-brand-accent/30 text-xs text-brand-accent font-bold transition-all cursor-pointer border border-brand-accent/30"
+                    >
+                      عرض جميع التقارير
+                    </button>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-right border-collapse text-xs md:text-sm">
+                      <thead>
+                        <tr className="border-b border-brand-border text-brand-dim font-bold pb-4">
+                          <th className="pb-4 pt-2 font-bold pr-4">التاريخ</th>
+                          <th className="pb-4 pt-2 font-bold text-left font-sans">إجمالي الكاش المستلم</th>
+                          <th className="pb-4 pt-2 font-bold text-left font-sans">إجمالي رصيد المحافظ النشطة</th>
+                          <th className="pb-4 pt-2 font-bold text-left font-sans text-brand-accent">Marketing Sys 1</th>
+                          <th className="pb-4 pt-2 font-bold text-left font-sans">الكاش النهائي المتبقي</th>
+                          <th className="pb-4 pt-2 font-bold text-left font-sans">إجمالي عدد اللييدز</t
+                              <tr
+                                onClick={() => toggleRowExpansion(report.id)}
+                                className={`hover:bg-white/[0.015] cursor-pointer transition-colors duration-200 ${
+                                  isExpanded ? 'bg-white/[0.01]' : ''
+                                }`}
+                              >
+           
+
+                                            {walletsList.length === 0 ? (
+                                              <div className="text-center text-xs py-8 text-brand-dim/50">
+                                  {Number(report.total_cash).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </td>
+                                <td className="py-4 text-left font-mono text-brand-dim">
+                                  {Number(report.calc_total_wallets).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </td>
+                                <td className="py-4 text-left font-mono font-bold text-brand-accent">
+                                  {Number(report.sys1_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </td>
+                                <td className="py-4 text-left font-mono text-white">
+                                  {Number(report.calc_remaining_cash).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </td>
+                                <td className="py-4 text-left font-mono text-brand-dim">
+                                  {report.total_leads}
+                                </td>
+                                <td className="py-4 text-center pl-4 font-sans">
+                                  <button className="p-1 rounded bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer">
+                                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                  </button>
+                                </td>
+                              </tr>
+
+                              {isExpanded && (
+                                <tr className="bg-brand-bg/60">
+                                </tr>
+                              )}
+                            </React.Fragment>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+                          return (
+                            <React.Fragment key={report.id}>
+                              <tr
+                                onClick={() => toggleRowExpansion(report.id)}
+                                className={`hover:bg-white/[0.015] cursor-pointer transition-colors duration-200 ${
+                                  isExpanded ? 'bg-white/[0.01]' : ''
+                                }`}
+                              >
+                                <td className="py-4 pr-4 text-right font-sans font-semibold text-white">
+                                  {displayDate}
+                                </td>
+                                <td className="py-4 text-left font-mono text-white">
+                                  {Number(report.total_cash).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </td>
+                                <td className="py-4 text-left font-mono text-brand-dim">
+                                  {Number(report.calc_total_wallets).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </td>
+                                <td className="py-4 text-left font-mono font-bold text-brand-accent">
+                                  {Number(report.sys1_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </td>
+                                <td className="py-4 text-left font-mono text-white">
+                                  {Number(report.calc_remaining_cash).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </td>
+                                <td className="py-4 text-left font-mono text-brand-dim">
+                                  {report.total_leads}
+                                </td>
+                                <td className="py-4 text-center pl-4 font-sans">
+                                  <button className="p-1 rounded bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer">
+                                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                  </button>
+                                </td>
+                              </tr>
+
+                              {isExpanded && (
+                                <tr className="bg-brand-bg/60">
+                                  <td colSpan={7} className="p-0 border-t border-brand-border/20">
+                                    <div className="px-6 py-6 space-y-6 text-right animate-scale-up">
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        {/* Inputs Breakdown */}
+                                        <div className="p-4 rounded-xl bg-white/[0.01] border border-white/[0.04] space-y-2.5">
+                                          <h5 className="text-xs font-bold text-brand-accent tracking-wide mb-3">المدخلات الأساسية اليومية</h5>
+                                          <div className="flex justify-between text-xs">
+                                            <span className="text-brand-dim">إجمالي الكاش المستلم:</span>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          </div>
+                                          <div className="flex justify-between text-xs pt-1.5 border-t border-white/[0.04] font-semibold">
+                                            <span className="text-brand-dim">إجمالي عدد اللييدز:</span>
+                                            <span className="font-mono text-white">{report.total_leads}</span>
+                                          </div>
+                                          {/* Breakdown of product counts */}
+                                          {sys1CountVal > 0 || sys2CountVal > 0 || sys3CountVal > 0 ? (
+                                            <div className="space-y-1.5 pt-2 border-t border-dashed border-white/[0.04] text-[11px] text-brand-dim">
+                                              <div className="flex justify-between">
+                                                <span>عدد Marketing Sys 1:</span>
+                                                <span>{sys1CountVal}</span>
+                                              </div>
+                                              <div className="flex justify-between">
+                                                <span>عدد Marketing Sys 2:</span>
+                                                <span>{sys2CountVal}</span>
+                                              </div>
+                                              <div className="flex justify-between">
+                                                <span>عدد Marketing Sys 3:</span>
+                                                <span>{sys3CountVal}</span>
+                                              </div>
+                                            </div>
+                                          ) : null}
+                                        </div>
+
+                                        {/* Calculations Summary */}
+                                        <div className="p-4 rounded-xl bg-white/[0.01] border border-white/[0.04] space-y-2.5">
+                                          <h5 className="text-xs font-bold text-brand-accent tracking-wide mb-3">النتائج والمعادلات المحسوبة</h5>
+                                          <div className="flex justify-between text-xs">
+                                            <span className="text-brand-dim">الكاش المتبقي (بعد التحويلات):</span>
+                                            <span className="font-mono text-white">
+                                              {Number(report.total_cash - report.personal_expenses - report.recipient_money).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between text-xs">
+                                            <span className="text-brand-dim">إجمالي رصيد المحافظ النشطة:</span>
+                                            <
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                            <span>تكلفة العميل (CPL Sys 1):</span>
+                                            <span className="font-mono">
+                                              {sys1CplVal === 'Add count First' ? (
+                                                <span className="text-[10px] text-brand-accent/50 italic">أدخل العدد أولاً</span>
+                                              ) : (
+                                                <span>{Number(sys1CplVal).toLocaleString('en-US')} ج.م</span>
+                                              )}
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between text-xs text-brand-dim pl-2">
+                                            <span>تكلفة العميل (CPL Sys 2):</span>
+                                            <span className="font-mono">
+                                              {sys2CplVal === 'Add count First' ? (
+                                                <span className="text-[10px] text-brand-dim/40 italic">أدخل العدد أولاً</span>
+                                              ) : (
+                                                <span>{Number(sys2CplVal).toLocaleString('en-US')} ج.م</span>
+                                              )}
+           
+                <p className="text-xs text-brand-dim mt-0.5">يرجى التأكد من مطابقة أرصدة المحافظ والـ SIM</p>
+              </div>
+            </div>
+
+            {/* Content text */}
+            <p className="text-sm font-medium text-white/90 leading-relaxed mb-6">
+              أنتا متأكد أنك عدلت الكاش اللي في المحافظ وكله تمام؟
+            </p>
+
+            {/* Decision buttons */}
+            <div className="flex flex-row-reverse gap-3">
+              <button
+                type="button"
+                onClick={executeSave}
+                className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-brand-accent to-brand-accent-dark hover:from-brand-accent-dark hover:to-brand-accent transition-all duration-300 cursor-pointer text-center shadow-[0_4px_15px_rgba(139,92,246,0.3)]"
+              >
+                تأكيد الحفظ
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-brand-dim bg-white/[0.02] border border-white/[0.08] hover:bg-white/[0.05] hover:text-white transition-all duration-300 cursor-pointer text-center"
+              >
+                إلغاء
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                      {activeWallets.length === 0 ? (
+                        <div className="text-center py-8 text-brand-dim/50 border border-dashed border-white/[0.05] rounded-2xl">
+                          لا توجد محافظ نشطة مسجلة لك حالياً في لوحة التحكم.
+                        </div>
+                      ) : (
+                        <div className="space-y-4 max-h-[550px] overflow-y-auto pr-1">
+                          {activeWallets.map((wallet) => (
+                            <div key={wallet.id} className="flex items-center justify-between gap-4 py-1.5 px-3.5 rounded-xl bg-white/[0.01] border border-white/[0.03] hover:border-white/[0.06] transition-all duration-300">
+                              <div className="flex items-center gap-2 text-right">
+                                <Smartphone className="h-4 w-4 text-brand-accent" />
+                                <span className="text-sm font-bold text-white font-mono">{wallet.phone_number}</span>
+                              </div>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                value={walletAmounts[wallet.phone_number] || ''}
+                                onChange={(e) => handleWalletAmountChange(wallet.phone_number, e.target.value)}
+            <div className="flex items-center gap-3.5 mb-5 pb-4 border-b border-white/[0.04]">
+              <div className="p-3 rounded-2xl bg-brand-accent/10 border border-brand-accent/20 text-brand-accent">
+
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-white">تأكيد حفظ البيانات اليومية</h3>
+                <p className="text-xs text-brand-dim mt-0.5">يرجى التأكد من مطابقة أرصدة المحافظ والـ SIM</p>
+              </div>
+            </div>
+
+            {/* Content text */}
+            <p className="text-sm font-medium text-white/90 leading-relaxed mb-6">
+              أنتا متأكد أنك عدلت الكاش اللي في المحافظ وكله تمام؟
+            </p>
+
+            {/* Decision buttons */}
+            <div className="flex flex-row-reverse gap-3">
+              <button
+                type="button"
+                onClick={executeSave}
+                className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-brand-accent to-brand-accent-dark hover:from-brand-accent-dark hover:to-brand-accent transition-all duration-300 cursor-pointer text-center shadow-[0_4px_15px_rgba(139,92,246,0.3)]"
+              >
+                تأكيد الحفظ
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-brand-dim bg-white/[0.02] border border-white/[0.08] hover:bg-white/[0.05] hover:text-white transition-all duration-300 cursor-pointer text-center"
+              >
+                إلغاء
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+              </div>
+              ) : null}
+            </form>
+          )}
+
+          {/* Tab 3: Get Data / History */}
+          {activeTab === 'history' && (
+            <div className="rounded-[24px] bg-brand-card border border-brand-border p-6 md:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative">
+              <div className="absolute -top-[100px] -right-[100px] w-[200px] h-[200px] bg-brand-accent/5 rounded-full blur-[50px] pointer-events-none" />
+
+              {/* Header & Date Filter */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-white/[0.04]">
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-2 text-right">سجل التقارير اليومية لـ CPL والكاش</h3>
+                  <p className="text-xs text-brand-dim text-right leading-relaxed">
+                    يعرض الجدول جميع التقارير السابقة مرتبة بالتاريخ الأحدث أولاً. اضغط على أي صف لعرض تفاصيل المحافظ وباقي المعادلات المجمعة.
+                  </p>
+                </div>
+                
+                <div className="flex items-center justify-start md:justify-end gap-2 shrink-0 self-start md:self-center">
+                  {filterDate && (
+                    <button
+                      type="button"
+                      onClick={() => setFilterDate('')}
+                      className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-white/80 hover:text-white transition-all cursor-pointer border border-white/[0.05]"
+                    >
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+              ) : (
+                <>
+                  {filteredReports.length === 0 ? (
+                    <div className="text-center py-12 text-brand-dim/60 space-y-3">
+                      <p>لا توجد تقارير مطابقة للتاريخ المحدد ({filterDate}).</p>
+                      <button
+                        type="button"
+                        onClick={() => setFilterDate('')}
+                        className="px-4 py-2 rounded-xl bg-brand-accent/20 hover:bg-brand-accent/30 text-xs text-brand-accent font-bold transition-all cursor-pointer border border-brand-accent/30"
+                      >
+                        عرض جميع التقارير
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-right border-collapse text-xs md:text-sm">
+                        <thead>
+                          <tr className="border-b border-brand-border text-brand-dim font-bold pb-4">
+                            <th className="pb-4 pt-2 font-bold pr-4">التاريخ</th>
+                            <th className="pb-4 pt-2 font-bold text-left font-sans">إجمالي الكاش المستلم</th>
+                            <th className="pb-4 pt-2 font-bold text-left font-sans">إجمالي رصيد المحافظ النشطة</th>
+                            <th className="pb-4 pt-2 font-bold text-left font-sans text-brand-accent">Marketing Sys 1</th>
+                            <th className="pb-4 pt-2 font-bold text-left font-sans">الكاش النهائي المتبقي</th>
+                            <th className="pb-4 pt-2 font-bold text-left font-sans">إجمالي عدد اللييدز</th>
+                            <th className="pb-4 pt-2 font-bold text-center">التعديل</th>
+                            <th className="pb-4 pt-2 font-bold text-center pl-4">التفاصيل</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-brand-border/40 text-xs md:text-sm text-white font-mono">
+                          {filteredReports.map((report) => {
+                            const isExpanded = expandedRowId === report.id
+                            const displayDate = new Date(report.report_date).toLocaleDateString('ar-EG-u-nu-latn', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              weekday: 'long'
+                            })
+
+                            const reportWalletsDetails = report.wallets_details as any
+                            let walletsList: any[] = []
+                            let sys1CountVal = report.sys1_count ?? 0
+                            let sys2CountVal = report.sys2_count ?? 0
+                            let sys3CountVal = report.sys3_count ?? 0
+
+                            if (reportWalletsDetails) {
+                              if (Array.isArray(reportWalletsDetails)) {
+                                walletsList = reportWalletsDetails
+                              } else {
+                                if (Array.isArray(reportWalletsDetails.wallets)) {
+                                  walletsList = reportWalletsDetails.wallets
+                                }
+                                if (!sys1CountVal) {
+                                  sys1CountVal = reportWalletsDetails.sys1_count ?? reportWalletsDetails.avera_count ?? 0
+                                }
+                                if (!sys2CountVal) {
+                                  sys2CountVal = reportWalletsDetails.sys2_count ?? reportWalletsDetails.sotara_count ?? 0
+                                }
+                                if (!sys3CountVal) {
+                                  sys3CountVal = reportWalletsDetails.sys3_count ?? reportWalletsDetails.best_flex_count ?? 0
+                                }
+                              }
+                            }
+                                            ) : (
+                                              walletsList.map((w, idx) => (
+                                                <div key={idx} className="flex justify-between text-xs items-center bg-white/[0.01] border border-white/[0.02] p-2 rounded-lg">
+                                                  <span className="text-brand-dim font-mono">{w.phone}</span>
+                                                  <span className="font-mono text-white font-bold">{Number(w.amount).toLocaleString('en-US')} ج.م</span>
+                                                </div>
+                                              ))
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (

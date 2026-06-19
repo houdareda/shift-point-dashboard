@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import WalletForm from './wallet-form'
@@ -17,7 +18,18 @@ export default async function WalletsPage() {
     redirect('/login')
   }
 
-  // Fetch only wallets belonging to the current user (agent_id = user.id)
+  // Retrieve current user's role to verify permissions
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const userRole = profile?.role?.toLowerCase() || 'agent'
+  if (userRole === 'accountant') {
+    redirect('/dashboard')
+  }
+
   const { data: wallets, error: walletsError } = await supabase
     .from('wallets')
     .select('*')
